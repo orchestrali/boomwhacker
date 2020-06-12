@@ -375,7 +375,12 @@ $(function() {
     let stage = stages[(numbells-4)/2];
     $("li#"+stage).css({color: "white", "background-color": "black"});
     bellnums();
-    //updatelist({info: entrants});
+    for (let i = 0; i < entrants.length; i++) {
+      entrants[i].pair = 0;
+    }
+    updatelist({info: entrants});
+    $("#controls").children().remove();
+    
     
     insidepairs = [];
     for (let i = 2; i < numbells; i++) {
