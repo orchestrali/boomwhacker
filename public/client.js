@@ -168,54 +168,67 @@ $(function() {
         for (let i = 0; i < 2; i++) {
           k = 0;
           let bell = bells.find(b => b.num === currentrow[obj.pair-1+i]);
-          let left = Number($("#"+bell.bell).css("left").slice(0, -2));
+          let left = (numbells-obj.pair-i)*100;
           let inside = insidepairs[obj.pair-2+i];
           if (inside === 1) {
             k = j;
             insidepairs[obj.pair-2+i] *= -1;
           }
-          $("#"+bell.bell).css("left", (left+100*j+50*k)+ "px");
+          $("#"+bell.bell).css("left", (left+100*j)+ "px");
           j*=-1;
         }
         currentrow = row;
         //socket.emit("currentrow", currentrow);
       } else if (obj.type != "places") {
         let arr = [];
-        if (["stretchL", "stretch"].includes(obj.type)) arr.push(0);
-        if (["stretchR", "stretch"].includes(obj.type)) arr.push(1);
+        let arr2 = [];
+        for (let i = 0; i < 2; i++) {
+          let o = {
+            startplace: obj.pair+i,
+            bellnum: currentrow[obj.pair+i-1],
+            stretch: [i === 0 ? "stretchR" : "stretchL", "stretch"].includes(obj.type),
+            startstretch: insidepairs[obj.pair+i-2]
+          }
+          arr2.push(o);
+        }
+        
         let j = -1;
-        arr.forEach(i => {
-          if (obj.type === "stretchR") j*=-1;
-          insidepairs[obj.pair-1-i] *= -1;
-          let bell = bells.find(b => b.num === currentrow[obj.pair-i]);
-          let left = Number($("#"+bell.bell).css("left").slice(0, -2));
-          if (insidepairs[obj.pair-1-i] === 1) {
-            if (insidepairs[obj.pair-1-i-j] === 1) { //if the bell to swap with has also stretched
-              let row = [currentrow[0]];
-              for (let k = 2; k < numbells; k+=2) {
-                if (k === obj.pair-j) {
-                  row.push(currentrow[k], currentrow[k-1]);
-                  $("#"+bell.bell).css("left", (left+100*j)+ "px");
-                  let otherbell = bells.find(b => b.num === currentrow[obj.pair-i*3+1]);
-                  let otherleft = Number($("#"+otherbell.bell).css("left").slice(0, -2));
-                  $("#"+otherbell.bell).css("left", (otherleft-50*j)+"px");
-                } else {
-                  row.push(currentrow[k-1], currentrow[k]);
-                }
-              }
-              row.push(currentrow[numbells-1]);
-              currentrow = row;
-              //socket.emit("currentrow", currentrow);
-              insidepairs[obj.pair-1-i] *= -1;
-              insidepairs[obj.pair-1-i-j] *= -1;
+        
+        arr2.forEach(i => {
+          if (i.stretch) {
+            let bell = bells.find(b => b.num === i.bellnum);
+            let left = (numbells-i.startplace)*100;
+            if (i.startstretch === 1) {
+              $("#"+bell.bell).css("left", left+"px");
+              insidepairs[i.startplace-2] = -1;
             } else {
-              $("#"+bell.bell).css("left", (left+50*j)+"px");
+              let otherplace = i.startplace+j;
+              if (insidepairs[otherplace-2] === 1) {
+                let otherbell = bells.find(b => b.num === currentrow[otherplace-1]);
+                let otherleft = (numbells-otherplace)*100;
+                let row = [currentrow[0]];
+                for (let k = 2; k < numbells; k += 2) {
+                  if (k === i.startplace) {
+                    row.push(currentrow[k], currentrow[k-1]);
+                  } else {
+                    row.push(currentrow[k-1], currentrow[k]);
+                  }
+                }
+                row.push(currentrow[numbells-1]);
+                currentrow = row;
+                $("#"+bell.bell).css("left", (left-j*100)+"px");
+                $("#"+otherbell.bell).css("left", (otherleft+j*100)+"px");
+                insidepairs[i.startplace-2] = -1;
+                insidepairs[otherplace-2] = -1;
+              } else {
+                $("#"+bell.bell).css("left", (left-j*50)+"px");
+                insidepairs[i.startplace-2] = 1;
+              }
             }
-          } else {
-            $("#"+bell.bell).css("left", (left-50*j)+"px");
           }
           j *= -1;
         });
+        
       } 
       
       console.log(insidepairs);
