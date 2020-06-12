@@ -26,6 +26,11 @@ select {
   margin-left: 10px;
 }
 
+a {
+  text-decoration: none;
+  color: gray;
+}
+
 button {
   padding: 20px;
   font-family: Georgia;

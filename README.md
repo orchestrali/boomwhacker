@@ -24,6 +24,7 @@ Here are some features I'm considering adding
 - Option to display "handstroke" or "backstroke" as appropriate
 - Option to display place notation (custom or for a named method) above the bells
 - Option to turn off the audio panning
+- Allow name changes after entering
 
 
 The code for this app is also stored at [this repository](https://github.com/orchestrali/boomwhacker). To make your own ringing chamber, you can remix this glitch app, or just create a new one and use the github import option from my boomwhacker repository. You'll also need two secret words in the .env file, one called "SECRET" and one called "CAPTAIN". Once you have your own chamber running, you can check back at that github link to see if there have been changes.
