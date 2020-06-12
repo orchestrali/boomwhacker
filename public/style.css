@@ -22,6 +22,10 @@ ul {
   list-style-type: none;
 }
 
+select {
+  margin-left: 10px;
+}
+
 button {
   padding: 20px;
   font-family: Georgia;
@@ -80,10 +84,30 @@ div#room {
   position: relative;
 }
 
+div#playing {
+  position: absolute;
+  display: none;
+  background-color: white;
+  opacity: 0.8;
+  width: 400px;
+  text-align: center;
+  top: 150px;
+}
+
 div.bell {
   position: absolute;
   top: 100px;
+  transition: left 200ms linear;
 }
+
+div.controls {
+  position: absolute;
+  top: 250px;
+}
+div.controls button {
+  padding: 10px 20px;
+}
+
 
 div.base {
   position: absolute;
@@ -111,7 +135,7 @@ div.handle.small {
 }
 
 #c5 {
-  left: 0;
+  left: 0px;
 }
 
 #d5 {
