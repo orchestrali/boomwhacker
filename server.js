@@ -12,6 +12,8 @@ var entrants = [];
 
 const bells = require("./src/bells.js");
 var numbells = 6; 
+var playing = false;
+var state;
 
 app.use(express.static('public'));
 
@@ -20,14 +22,16 @@ io.on('connection', (socket) => {
   console.log(entrants.length);
   //send the bells object
   socket.emit('bells', bells);
+  socket.emit('names', entrants.map(e => e.name));
   
   socket.on('entrant', (obj) => {
     if ([process.env.SECRET, process.env.CAPTAIN].includes(obj.secret)) {
       //add person to list, send list, send socket the current stage
       entrants.push({name: obj.name, id: socket.id, conductor: obj.secret === process.env.CAPTAIN});
+      socket.emit('numbells', {num: numbells, playing: playing, status: state});
+      //
       io.emit('entrance', {info: entrants});
       
-      socket.emit('numbells', numbells);
       //io.emit('message', {type: "entrants", info: entrants});
     } else {
       socket.emit('wrong', "");
@@ -40,6 +44,32 @@ io.on('connection', (socket) => {
     console.log("stage change: "+num);
     numbells = num;
     socket.broadcast.emit('stagechange', numbells);
+  });
+  
+  //playing
+  socket.on('start', () => {
+    playing = true;
+    io.emit('start');
+  });
+  socket.on('stop', (status) => {
+    playing = false;
+    state = status;
+    io.emit('stop', status);
+  });
+  
+  socket.on('reset', () => {
+    state = null;
+    io.emit('reset');
+  });
+  
+  socket.on('change', (obj) => {
+    io.emit('change', obj);
+  });
+  
+  socket.on('assign', (obj) => {
+    let person = entrants.find(e => e.name === obj.name);
+    if (person) person.pair = obj.pair;
+    io.emit('assign', entrants);
   });
   
   
