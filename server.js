@@ -6,7 +6,7 @@ var WebSocket = require('ws');
 var app = express();
 var server = http.createServer(app);
 var io = require('socket.io')(server);
-//var wsserver = new WebSocket.Server({ server: server });
+
 const router = require("./src/router.js");
 var entrants = [];
 
@@ -16,6 +16,7 @@ var playing = false;
 var state;
 
 app.use(express.static('public'));
+//console.log(entrants[-1])
 
 io.on('connection', (socket) => {
   console.log("a user connected");

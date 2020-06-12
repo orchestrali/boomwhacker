@@ -164,10 +164,17 @@ $(function() {
           }
         }
         let j = -1;
+        let k = 0;
         for (let i = 0; i < 2; i++) {
+          k = 0;
           let bell = bells.find(b => b.num === currentrow[obj.pair-1+i]);
           let left = Number($("#"+bell.bell).css("left").slice(0, -2));
-          $("#"+bell.bell).css("left", (left+100*j)+ "px");
+          let inside = insidepairs[obj.pair-2+i];
+          if (inside === 1) {
+            k = j;
+            insidepairs[obj.pair-2+i] *= -1;
+          }
+          $("#"+bell.bell).css("left", (left+100*j+50*k)+ "px");
           j*=-1;
         }
         currentrow = row;
