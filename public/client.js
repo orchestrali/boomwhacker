@@ -198,17 +198,17 @@ $(function() {
           if (i.stretch) {
             let bell = bells.find(b => b.num === i.bellnum);
             let left = (numbells-i.startplace)*100;
-            if (i.startstretch === 1) {
+            if (i.startstretch === 1) { //if the bell has started to stretch, bring it back to place;
               $("#"+bell.bell).css("left", left+"px");
               insidepairs[i.startplace-2] = -1;
             } else {
               let otherplace = i.startplace+j;
-              if (insidepairs[otherplace-2] === 1) {
+              if (insidepairs[otherplace-2] === 1) { //if the other bell has stretched already
                 let otherbell = bells.find(b => b.num === currentrow[otherplace-1]);
                 let otherleft = (numbells-otherplace)*100;
                 let row = [currentrow[0]];
                 for (let k = 2; k < numbells; k += 2) {
-                  if (k === i.startplace) {
+                  if (k === i.startplace || k === otherplace) {
                     row.push(currentrow[k], currentrow[k-1]);
                   } else {
                     row.push(currentrow[k-1], currentrow[k]);
