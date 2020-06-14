@@ -472,6 +472,8 @@ $(function() {
       if (stroke === -1) nextBellTime += delay; //add handstroke gap
       place = 0;
       stroke *= -1;
+      console.log("stroke change");
+      $("div.bell").css("top", 150 + stroke * 25 + "px");
       rownum++;
     }
     
