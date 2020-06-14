@@ -17,12 +17,13 @@ var state = {speed: 2};
 
 app.use(express.static('public'));
 //console.log(entrants[-1])
-
+//
 io.on('connection', (socket) => {
   console.log("a user connected");
   console.log(entrants.length);
   //send the bells object
   socket.emit('bells', bells);
+  //send names to check if any are already in use
   socket.emit('names', entrants.map(e => e.name));
   
   socket.on('entrant', (obj) => {
@@ -63,14 +64,16 @@ io.on('connection', (socket) => {
   });
   
   socket.on('reset', () => {
-    state = null;
+    state = {speed: state.speed};
     io.emit('reset');
   });
   
+  //change as in change ringing
   socket.on('change', (obj) => {
     io.emit('change', obj);
   });
   
+  //assign ringer to places
   socket.on('assign', (obj) => {
     let person = entrants.find(e => e.name === obj.name);
     if (person) person.pair = obj.pair;
