@@ -17,7 +17,7 @@ var state = {speed: 2};
 
 app.use(express.static('public'));
 //console.log(entrants[-1])
-//
+
 io.on('connection', (socket) => {
   console.log("a user connected");
   console.log(entrants.length);

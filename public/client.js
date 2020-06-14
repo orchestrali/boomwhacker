@@ -472,6 +472,7 @@ $(function() {
       if (stroke === -1) nextBellTime += delay; //add handstroke gap
       place = 0;
       stroke *= -1;
+      $("div.bell").css("top", 150 + stroke * 25 + "px");
       rownum++;
     }
     
@@ -483,6 +484,7 @@ $(function() {
   
   function scheduleRing(p, t) {
     let bell = bells.find(b => b.num === currentrow[p]);
+    
     if (p === 0) {
       rowArr.push({rownum: rownum, row: [currentrow[p]], times: [t]});
     } else {
