@@ -52,6 +52,10 @@ div.column {
   margin: 5px;
 }
 
+div.conduct {
+  display: none;
+}
+
 label, input#name {
   width: 200px;
 }
@@ -101,13 +105,13 @@ div#playing {
 
 div.bell {
   position: absolute;
-  top: 150px;
-  transition: left 200ms linear;
+  top: 175px;
+  transition: left 200ms linear, top 150ms linear;
 }
 
 div.controls {
   position: absolute;
-  top: 300px;
+  top: 325px;
 }
 div.controls button {
   padding: 10px 20px;

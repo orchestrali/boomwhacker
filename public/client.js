@@ -19,6 +19,7 @@ $(function() {
   var entrants;
   var list = [];
   var mypair = 0;
+  var speed = 2;
 
   var captain = false;
   var disconnected = false;
@@ -36,6 +37,8 @@ $(function() {
   var rownum = -1;
   var rowArr = [];
   var timeout;
+  
+  console.log("numbers "+speed + " "+ delay);
   
   //enter the chamber
   $("#enterbutton").on("click", function(e) {
@@ -75,6 +78,18 @@ $(function() {
     }
   });
   
+  //change speed
+  $("#speed").change(function() {
+    speed = Number($("#speed").val());
+    socket.emit("speed", Number($("#speed").val()));
+  });
+  
+  
+  socket.on("speed", (s) => {
+    speed = s;
+    delay = s/numbells;
+  });
+  
   
   
   socket.on("names", (nn) => {
@@ -86,6 +101,7 @@ $(function() {
     if (!disconnected && ready) {
       entrants = m.info;
       if (m.info.find(o => o.name === name).conductor) captain = true;
+      console.log("numbers "+speed + " "+ delay);
       input.placeholder = "Say something, " + name;
       updatelist(m);
       $("#enter").hide();
@@ -93,6 +109,7 @@ $(function() {
       if (captain) {
         //$("#numbells").after('<ul id="conduct"> <li id="start">Start</li><li id="reset">Reset</li> </ul>');
         $("#conduct").show();
+        $(".conduct").show();
       }
       
       
@@ -117,7 +134,8 @@ $(function() {
         rowArr: rowArr,
         rownum: rownum,
         stroke: stroke,
-        place: place
+        place: place,
+        speed: speed
       }
       socket.emit("stop", status);
     }
@@ -241,11 +259,14 @@ $(function() {
     if (ready) {
       console.log("starting play?");
       console.log(currentrow);
+      console.log(speed);
+      console.log(delay);
       $("#start").text("Stop");
       playing = true;
       //play(currentrow, 0);
       nextBellTime = audioCtx.currentTime;
       scheduler();
+      requestAnimationFrame(movebell);
     }
   });
   
@@ -302,7 +323,8 @@ $(function() {
     console.log("numbells: "+obj.num);
     ready = true;
     numbells = obj.num;
-    delay = 2/numbells;
+    speed = obj.status.speed;
+    delay = speed/numbells;
     if (obj.playing) {
       $("#playing").show();
     }
@@ -390,7 +412,7 @@ $(function() {
       $("div.bell:nth-last-child(-n+"+x+")").detach();
     }
     numbells = n;
-    delay = 2/numbells;
+    delay = speed/numbells;
     $("#numbells li").css({color: "black", "background-color": "white"});
     let stage = stages[(numbells-4)/2];
     $("li#"+stage).css({color: "white", "background-color": "black"});
@@ -457,6 +479,7 @@ $(function() {
   
   let lookahead = 25.0;
   let schedule = 0.1;
+  let queue = [];
   
   function scheduleRing(p, t) {
     let bell = bells.find(b => b.num === currentrow[p]);
@@ -466,11 +489,34 @@ $(function() {
       rowArr[rowArr.length-1].row.push(currentrow[p]);
       rowArr[rowArr.length-1].times.push(t);
     }
+    queue.push({bell: bell.bell, stroke: stroke, time: t});
     
     if (bell) {
       let pan = -p/(numbells-1) + 0.5;
       playSample(audioCtx, bell.buffer, pan, t);
     }
+    
+  }
+  
+  let lastmoved = "c5";
+  
+  function movebell() {
+    let bellmove = lastmoved;
+    let currentTime = audioCtx.currentTime;
+    let currentstroke;
+    
+    while (queue.length && queue[0].time < currentTime) {
+      bellmove = queue[0].bell;
+      currentstroke = queue[0].stroke;
+      queue.splice(0, 1);
+    }
+    
+    if (lastmoved != bellmove) {
+      $("#"+bellmove).css("top", 150 - currentstroke*25 + "px");
+      lastmoved = bellmove;
+    }
+    
+    requestAnimationFrame(movebell);
     
   }
   

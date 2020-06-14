@@ -13,11 +13,11 @@ var entrants = [];
 const bells = require("./src/bells.js");
 var numbells = 6; 
 var playing = false;
-var state;
+var state = {speed: 2};
 
 app.use(express.static('public'));
 //console.log(entrants[-1])
-
+//
 io.on('connection', (socket) => {
   console.log("a user connected");
   console.log(entrants.length);
@@ -38,6 +38,10 @@ io.on('connection', (socket) => {
       socket.emit('wrong', "");
     }
     
+  });
+  
+  socket.on('speed', (s) => {
+    io.emit('speed', s);
   });
   
   //stage change
