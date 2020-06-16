@@ -14,10 +14,11 @@ const bells = require("./src/bells.js");
 var numbells = 6; 
 var playing = false;
 var state = {speed: 2};
+let disconnected = [];
 
 app.use(express.static('public'));
 //console.log(entrants[-1])
-//
+
 io.on('connection', (socket) => {
   console.log("a user connected");
   console.log(entrants.length);
@@ -25,6 +26,10 @@ io.on('connection', (socket) => {
   socket.emit('bells', bells);
   //send names to check if any are already in use
   socket.emit('names', entrants.map(e => e.name));
+  if (disconnected.length) {
+    socket.emit('prevnames', disconnected.map(e => e.name));
+  }
+  
   
   socket.on('entrant', (obj) => {
     if ([process.env.SECRET, process.env.CAPTAIN].includes(obj.secret)) {
@@ -40,6 +45,7 @@ io.on('connection', (socket) => {
     }
     
   });
+  
   
   socket.on('speed', (s) => {
     io.emit('speed', s);
@@ -91,7 +97,7 @@ io.on('connection', (socket) => {
     let i = entrants.findIndex(e => e.id === socket.id);
     if (i > -1) {
       console.log(entrants[i].name);
-      entrants.splice(i, 1);
+      disconnected.push(entrants.splice(i, 1));
       io.emit('message', {type: "entrants", info: entrants});
     }
   });
