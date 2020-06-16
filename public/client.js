@@ -40,7 +40,7 @@ $(function() {
   
   console.log("numbers "+speed + " "+ delay);
   
-  //enter the chamber
+  //enter button click
   $("#enterbutton").on("click", function(e) {
     
     if (audioCtx.state === 'suspended') {
@@ -63,10 +63,20 @@ $(function() {
 
   });
   
+  //
+  socket.on('wrong', () => {
+    $("#secret").val("");
+    $("#secret").attr("placeholder", "invalid secret");
+  });
+  
   //send chat messages
   input.addEventListener('change', function(e) {
     socket.emit("message", "chat " + name + ": " + input.value);
     input.value = "";
+  });
+  
+  $("input#chat").on("keyup", function(e) {
+    e.preventDefault();
   });
   
   //allow captain(s) to change number of bells
@@ -96,12 +106,18 @@ $(function() {
     list = nn;
   });
   
+  socket.on("prevnames", (nn) => {
+    if (nn.includes(name)) {
+      console.log("reconnected!");
+    }
+  })
+  
   //when someone enters the chamber
   socket.on("entrance", function(m) {
     if (!disconnected && ready) {
       entrants = m.info;
       if (m.info.find(o => o.name === name).conductor) captain = true;
-      console.log("numbers "+speed + " "+ delay);
+      //console.log("numbers "+speed + " "+ delay);
       input.placeholder = "Say something, " + name;
       updatelist(m);
       $("#enter").hide();
@@ -117,6 +133,7 @@ $(function() {
     
   });
   
+  //bell assignment changed
   $("#entrants").on("change", "select.pair", function() {
         console.log($(this).children("option:checked").val());
         let n = $(this).prev("span").text();
@@ -142,12 +159,14 @@ $(function() {
     
   });
   
+  //reset button clicked
   $("#reset").on("click", function() {
     if (!playing) {
       socket.emit("reset");
     }
   });
   
+  //reset received
   socket.on('reset', () => {
     $("div.bell").attr("style", "");
     currentrow = [];
@@ -162,15 +181,56 @@ $(function() {
     }
   });
   
+  //change button clicked
   $("#controls").on("click", "button", function() {
     console.log($(this).attr("class"));
     //console.log(mypair);
     socket.emit("change", {type: $(this).attr("class"), pair: mypair});
   });
   
+  $("body").on("keyup", function(e) {
+    let cross = [191, 190, 188, 77, 86, 67, 88, 90].slice(-numbells/2);
+    let stretch = [186, 76, 75, 74, 70, 68, 83, 65].slice(-numbells/2);
+    let stretch1 = [79, 87, 73, 69, 85, 82, 89, 84, 72, 71, 78, 66].slice(4-numbells);
+    
+    if (captain) {
+      let change = {};
+      if (cross.includes(e.which)) {
+        
+        change.type = "cross";
+        change.pair = cross.indexOf(e.which)*2 + 1;
+      } else if (stretch.includes(e.which)) {
+        
+        change.type = stretch.indexOf(e.which) === 0 ? "stretchL" : stretch.indexOf(e.which) === stretch.length-1 ? "stretchR" : "stretch";
+        change.pair = stretch.indexOf(e.which)*2 + 1;
+      } else if (stretch1.includes(e.which)) {
+        let i = stretch1.indexOf(e.which);
+        change.type = i%2 === 0 ? "stretchL" : "stretchR";
+        change.pair = i%2 === 0 ? i+3 : i+2;
+      }
+      if (change.type) {
+        socket.emit("change", change);
+      }
+    } else {
+      let change = {
+        pair: mypair
+      }
+      if (e.which === 83) {
+        change.type = mypair === 1 ? "stretchL" : mypair === numbells-1 ? "stretchR" : "stretch";
+      } else {
+        change.type = e.which === 88 ? "cross" : e.which === 69 ? "stretchR" : e.which === 82 ? "stretchL" : null;
+      }
+      if (change.type) {
+        socket.emit("change", change);
+      }
+    }
+    
+  });
+  
+  //change received
   socket.on("change", (obj) => {
     if (ready) {
-      console.log(insidepairs);
+      //console.log(insidepairs);
       console.log(obj);
       if (obj.type === "cross") {
         let row = [];
@@ -346,7 +406,7 @@ $(function() {
     updatestage(n);
   });
   
-  
+  //chat message received or updated entrants list
   socket.on("message", function(m) {
     if (ready) {
       console.log("message");
@@ -365,14 +425,19 @@ $(function() {
     console.log(Object.keys(err));
   });
   
-  socket.on("disconnect", () => {
-    ready = false;
-    captain = false;
-    disconnected = true;
-    $("#container").hide();
-    $("#enter").hide();
-    $("#closed").show();
+  socket.on("disconnect", (r) => {
+    console.log(r);
+    //if (r === "io server disconnect") {
+      ready = false;
+      captain = false;
+      disconnected = true;
+      $("#container").hide();
+      $("#enter").hide();
+      $("#closed").show();
+    //}
   });
+  
+  
   
   function updatelist(m) {
     $("#entrants li").remove();
