@@ -27,6 +27,7 @@ io.on('connection', (socket) => {
   //send names to check if any are already in use
   socket.emit('names', entrants.map(e => e.name));
   if (disconnected.length) {
+    console.log("disconnected has length");
     socket.emit('prevnames', disconnected.map(e => e.name));
   }
   

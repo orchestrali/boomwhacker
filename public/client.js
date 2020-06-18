@@ -71,13 +71,20 @@ $(function() {
   
   //send chat messages
   input.addEventListener('change', function(e) {
+    
     socket.emit("message", "chat " + name + ": " + input.value);
     input.value = "";
   });
   
-  $("input#chat").on("keyup", function(e) {
-    e.preventDefault();
+  $("input").on("keypress", function(e) {
+    //e.preventDefault();
+    e.stopPropagation();
   });
+  
+  $("input#chat").on("keypress", function(e) {
+    console.log(e.keyCode);
+  });
+  
   
   //allow captain(s) to change number of bells
   $("#numbells li").on("click", function(e) {
@@ -140,6 +147,7 @@ $(function() {
         socket.emit("assign", {name: n, pair: Number($(this).children("option:checked").val())})
       });
   
+  //start or stop sound
   $("#start").on("click", function() {
     if (!playing) {
       socket.emit("start");
@@ -188,10 +196,11 @@ $(function() {
     socket.emit("change", {type: $(this).attr("class"), pair: mypair});
   });
   
-  $("body").on("keyup", function(e) {
-    let cross = [191, 190, 188, 77, 86, 67, 88, 90].slice(-numbells/2);
-    let stretch = [186, 76, 75, 74, 70, 68, 83, 65].slice(-numbells/2);
-    let stretch1 = [79, 87, 73, 69, 85, 82, 89, 84, 72, 71, 78, 66].slice(4-numbells);
+  //keyboard controls
+  $("body").on("keypress", function(e) {
+    let cross = [47, 46, 44, 109, 118, 99, 120, 122].slice(-numbells/2); // "/.,m vcxz"
+    let stretch = [59, 108, 107, 106, 102, 100, 115, 97].slice(-numbells/2); // ";lkj fdsa"
+    let stretch1 = [111, 119, 105, 101, 117, 114, 121, 116, 104, 103, 110, 98].slice(4-numbells); // "ow ie ur yt hg nb"
     
     if (captain) {
       let change = {};
@@ -215,10 +224,12 @@ $(function() {
       let change = {
         pair: mypair
       }
-      if (e.which === 83) {
+      if (e.which === Number($("#stretchkey").val().charCodeAt(0))) {
         change.type = mypair === 1 ? "stretchL" : mypair === numbells-1 ? "stretchR" : "stretch";
-      } else {
-        change.type = e.which === 88 ? "cross" : e.which === 69 ? "stretchR" : e.which === 82 ? "stretchL" : null;
+      } else if (e.which === Number($("#crosskey").val().charCodeAt(0))) {
+        change.type = "cross"
+      } else if (mypair > 1 && mypair < numbells-1) {
+        change.type = e.which === Number($("#stretchRkey").val().charCodeAt(0)) ? "stretchR" : e.which === Number($("#stretchLkey").val().charCodeAt(0)) ? "stretchL" : null;
       }
       if (change.type) {
         socket.emit("change", change);
