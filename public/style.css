@@ -84,6 +84,17 @@ ul#conduct li:hover {
   cursor: pointer;
 }
 
+#keyboard input {
+  display: inline-block;
+  width: 15px;
+  margin: 0;
+}
+#keyboard label {
+  display: inline-block;
+  max-width: 85px;
+  margin: 5px;
+}
+
 
 input#chat {
   width: 250px;
