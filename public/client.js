@@ -114,6 +114,7 @@ $(function() {
   });
   
   socket.on("prevnames", (nn) => {
+    console.log(nn);
     if (nn.includes(name)) {
       console.log("reconnected!");
     }
