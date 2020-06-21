@@ -15,17 +15,17 @@ The bell handles are color-coded the same way boomwhackers are! You can see boom
 Here are some features I'm considering adding
 --------------
 
-- Option to adjust the peal time or speed
+- ~~Option to adjust the peal time or speed~~ (implemented for captains)
 - Option to adjust the handstroke gap
 - Allow captains to grant captain powers
 - Allow ringers to retain place assignments when the stage is changed
-- Display little lines above each bell as it's ringing (this may be too complicated or confusing)
+- ~~Display little lines above each bell as it's ringing (this may be too complicated or confusing)~~ bells now move up or down for each stroke!
 - Allow captains to control all pairs of places
 - Option to display "handstroke" or "backstroke" as appropriate
 - Option to display place notation (custom or for a named method) above the bells
 - Option to turn off the audio panning
 - Allow name changes after entering
-- Keyboard controls for moving the bells
+- ~~Keyboard controls for moving the bells~~
 
 
 The code for this app is also stored at [this repository](https://github.com/orchestrali/boomwhacker). To make your own ringing chamber, you can remix this glitch app, or just create a new one and use the github import option from my boomwhacker repository. You'll also need two secret words in the .env file, one called "SECRET" and one called "CAPTAIN". Once you have your own chamber running, you can check back at that github link to see if there have been changes.
