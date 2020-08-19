@@ -221,7 +221,7 @@ $(function() {
       if (change.type) {
         socket.emit("change", change);
       }
-    } else {
+    } else if (ready) {
       let change = {
         pair: mypair
       }
