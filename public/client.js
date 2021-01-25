@@ -40,9 +40,25 @@ $(function() {
   
   console.log("numbers "+speed + " "+ delay);
   
+  $("window").focus(() => {
+    $("#resume").hide();
+  });
+  
+  $("window").blur(() => {
+    $("#resume").show();
+  });
+  
+  $("input").on("click", () => {
+    $("#resume").show();
+  });
+  
+  $("#resume").on("click", () => {
+    $("#resume").hide();
+  });
+  
   //enter button click
   $("#enterbutton").on("click", function(e) {
-    
+    $("#resume").hide();
     if (audioCtx.state === 'suspended') {
         audioCtx.resume();
     }
@@ -82,7 +98,7 @@ $(function() {
   });
   
   $("input#chat").on("keypress", function(e) {
-    console.log(e.keyCode);
+    //console.log(e.keyCode);
   });
   
   
@@ -134,6 +150,7 @@ $(function() {
         //$("#numbells").after('<ul id="conduct"> <li id="start">Start</li><li id="reset">Reset</li> </ul>');
         $("#conduct").show();
         $(".conduct").show();
+        $("#keyboard").hide();
       }
       
       
@@ -221,7 +238,7 @@ $(function() {
       if (change.type) {
         socket.emit("change", change);
       }
-    } else if (ready) {
+    } else if (ready && mypair) {
       let change = {
         pair: mypair
       }
@@ -241,6 +258,7 @@ $(function() {
   
   //change received
   socket.on("change", (obj) => {
+    console.log("change received");
     if (ready) {
       //console.log(insidepairs);
       console.log(obj);
