@@ -13,7 +13,7 @@ textarea {
   height: 200px;
 }
 
-label, button, input {
+#enter > label, button, input {
   display: block;
   margin: 10px auto;
 }
@@ -40,7 +40,12 @@ button:hover {
   cursor: pointer;
 }
 
-div#closed {
+input[type="radio"] {
+  display: inline-block;
+  margin-right: 5px;
+}
+
+div#closed,#instructopts {
   display: none;
 }
 
@@ -52,7 +57,7 @@ div.column {
   margin: 5px;
 }
 
-div.conduct {
+.conduct {
   display: none;
 }
 
@@ -102,6 +107,45 @@ input#chat {
 
 div#room {
   position: relative;
+}
+
+div#pn {
+  position: absolute;
+  top: 131px;
+  font-size: 20pt;
+  text-align: center;
+  overflow: hidden;
+  transition: top 400ms ease-in-out;
+}
+
+div.cover {
+  position: absolute;
+  width: 100px;
+}
+div.cover.top {
+  top: 0;
+  height: 70px;
+  background-image: linear-gradient(0deg, #fff0, white);
+}
+div.cover.bottom {
+  top: 128px;
+  height: 560px;
+  background-image: linear-gradient(0deg, white, 550px, #fff0);
+}
+div.rect {
+  position: absolute;
+  width: 60px;
+  height: 15px;
+  top: 106px;
+  background-color: navy;
+}
+div.triangle {
+  position: absolute;
+  top: 98px;
+  width: 0;
+  height: 0;
+  border: 16px solid transparent;
+  border-left: 20px solid navy;
 }
 
 div#playing {
