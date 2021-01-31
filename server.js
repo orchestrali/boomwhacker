@@ -87,6 +87,10 @@ io.on('connection', (socket) => {
     io.emit('assign', entrants);
   });
   
+  socket.on('method', (obj) => {
+    io.emit('method', obj);
+  });
+  
   
   socket.on('message', (data) => {
     //console.log(data);

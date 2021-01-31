@@ -8,7 +8,7 @@
   <body>
     <div id="closed">
       <h3>
-        Chamber is currently closed.
+        Connection error - try reloading to reenter.
       </h3>
     </div>
     <div id="enter">
@@ -68,16 +68,44 @@
           </ul>
           
         </div>
+        <div id="method">
+          <label for="methodname" class="conduct">Search for a method:</label>
+          <input type="text" id="methodname" class="conduct"/>
+          <p>
+            
+          </p>
+        </div>
+        <div id="instructopts">
+          Instructions to display
+          <ul>
+            <li>
+              <label for="pnfixed"><input type="radio" id="pnfixed" name="instruct" />place notation</label>
+            </li>
+            <li>
+              <label for="pnanim"><input type="radio" id="pnanim" name="instruct" />place notation animated</label>
+            </li>
+            <!--<li>
+              <label for="personal"><input type="radio" id="personal" name="instruct" />personal instructions</label>
+            </li>-->
+            <li>
+              <label for="pnnone"><input type="radio" id="pnnone" name="instruct" />none</label>
+            </li>
+          </ul>
+          
+        </div>
         
         <textarea readonly></textarea>
         <input type="text" id="chat">
-        <a href="https://glitch.com/edit/#!/changeringingchamber?path=README.md%3A1%3A0" >About this app</a>
+        <a href="https://glitch.com/edit/#!/changeringingchamber?path=README.md%3A1%3A0" target="blank">About this app</a>
       </div>
       <div class="column" id="room">
         <div id="display">
           <button type="button" id="resume">
             Click here to resume ringing
           </button>
+          <div id="pn">
+            
+          </div>
         </div>
         <div id="bells">
           

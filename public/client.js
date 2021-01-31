@@ -26,6 +26,14 @@ $(function() {
   var delay = 0.5;
   var playing = false;
   
+  var method = {
+    title: "Bastow Little Bob Minor",
+    pn: ["x", [1,2], "x", [1,6]]
+  };
+  var instructopt = "pnnone";
+  var instruct = false;
+  let top = 131;
+  
   var bellurl = "https://cdn.glitch.com/3222d552-1e4d-4657-8891-89dc006ccce8%2F";
   const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
   const panner = audioCtx.createPanner();
@@ -40,19 +48,20 @@ $(function() {
   
   console.log("numbers "+speed + " "+ delay);
   
-  $("window").focus(() => {
+  $(window).focus(() => {
     $("#resume").hide();
   });
   
-  $("window").blur(() => {
+  $(window).blur(() => {
     $("#resume").show();
   });
   
-  $("input").on("click", () => {
+  $('input[type="text"],input[type="number"]').on("click", (e) => {
+    e.stopPropagation();
     $("#resume").show();
   });
   
-  $("#resume").on("click", () => {
+  $("#resume,body").on("click", () => {
     $("#resume").hide();
   });
   
@@ -90,6 +99,35 @@ $(function() {
     
     socket.emit("message", "chat " + name + ": " + input.value);
     input.value = "";
+  });
+  
+  document.querySelector('#methodname').addEventListener('change', function(e) {
+    let val = $("#methodname").val();
+    $("#method > p").text("Loading...");
+    if (val.length) {
+      let xhr = new XMLHttpRequest();
+      xhr.open('GET', 'https://vivacious-port.glitch.me/find/method?title='+val.split(" ").join("+"), true);
+      xhr.send();
+      
+      xhr.onload = function () {
+        let res = JSON.parse(xhr.responseText);
+        if (res) {
+          method.title = res.title;
+          method.pn = res.pnFull;
+          socket.emit("method", method);
+        } else {
+          $("#method > p").text("Method not found");
+        }
+      }
+    }
+    
+  });
+  
+  $('input[name="instruct"]').change(function() {
+    //console.log(mypair);
+    
+    instructopt = this.id;
+    instructions();
   });
   
   $("input").on("keypress", function(e) {
@@ -146,6 +184,7 @@ $(function() {
       updatelist(m);
       $("#enter").hide();
       $("#container").show();
+      //socket.emit("method", method); //just here for testing purposes
       if (captain) {
         //$("#numbells").after('<ul id="conduct"> <li id="start">Start</li><li id="reset">Reset</li> </ul>');
         $("#conduct").show();
@@ -195,6 +234,8 @@ $(function() {
   //reset received
   socket.on('reset', () => {
     $("div.bell").attr("style", "");
+    $("#pn").css("top","131px");
+    top = 131;
     currentrow = [];
     insidepairs = [];
     rowArr = [];
@@ -396,6 +437,8 @@ $(function() {
     
   });
   
+  socket.on("method", setMethod);
+  
   //get the bells array from the server
   socket.on("bells", (bb) => {
     bells = bb;
@@ -466,6 +509,14 @@ $(function() {
       $("#closed").show();
     //}
   });
+  
+  
+  function setMethod(obj) {
+    method = obj;
+    $("#method > p").text("Current method: "+method.title);
+    $("#instructopts").show();
+    instructions();
+  }
   
   
   
@@ -611,6 +662,12 @@ $(function() {
     if (lastmoved != bellmove) {
       $("#"+bellmove).css("top", 150 - currentstroke*25 + "px");
       lastmoved = bellmove;
+      let next = mypair > 0 ? place === mypair : place === numbells-1;
+      if (instruct && next && rownum >= 0) {
+        top -= 31;
+        if (top <= 100 - method.pn.length*31) top = 100;
+        $("#pn").css("top", top+"px");
+      }
     }
     
     requestAnimationFrame(movebell);
@@ -729,10 +786,51 @@ $(function() {
     room.appendChild(div);
   }
   
+  function instructions() {
+    $(".cover,.rect,.triangle").remove();
+    instruct = false;
+    switch (instructopt) {
+        case "pnnone":
+          $("#pn").text("");
+          break;
+        case "pnfixed":
+          var arr = pnCondense(method.pn);
+          var str = arr[0];
+          for (let i = 1; i < arr.length; i++) {
+            if (arr[i-1] != "x" && arr[i] != "x") {
+              str += ".";
+            }
+            str += arr[i];
+          }
+          $("#pn").attr("style", "");
+          $("#pn").text(str);
+          break;
+        case "pnanim":
+          instruct = true;
+          arr = pnCondense(method.pn);
+          str = arr.join("<br/>");
+          let n = mypair === 0 ? numbells/2 : mypair;
+          let left = 100 * (numbells-1-n) + 48;
+          $("#pn").css({left: left+"px", width: "100px"});
+          let html = `<div class="cover top" style="left:${left}px"></div><div class="cover bottom" style="left:${left}px;height:${31*method.pn.length}px;background-image:linear-gradient(0deg, white, ${31*method.pn.length-10}px, #fff0);"></div>
+          <div class="rect" style="left:${left-60}px"></div><div class="triangle" style="left:${left}px"></div>`;
+          $("#display").append(html);
+          $("#pn").html(str);
+          break;
+      }
+  }
+  
   
   
 });
 
 
 
+
+function pnCondense(arr) {
+  return arr.map(e => {
+            const places = "1234567890ETABCD";
+            return e === "x" ? e : e.map(n => places[n-1]).join("");
+          });
+}
 
