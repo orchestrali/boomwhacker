@@ -39,6 +39,7 @@ $(function() {
   const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
   const panner = audioCtx.createPanner();
   panner.panningModel = 'equalpower';
+  const gainNode = audioCtx.createGain();
   
   var stroke = 1; //1 for handstrokes, -1 for backstrokes
   var place = 0;
@@ -57,7 +58,7 @@ $(function() {
     $("#resume").show();
   });
   
-  $('input[type="text"],input[type="number"]').on("click", (e) => {
+  $("#container").on("click", 'input[type="text"],input[type="number"]', (e) => {
     e.stopPropagation();
     $("#resume").show();
   });
@@ -166,6 +167,10 @@ $(function() {
   $("#speed").change(function() {
     speed = Number($("#speed").val());
     socket.emit("speed", Number($("#speed").val()));
+  });
+  
+  $("#volume").on("change", function(e) {
+    gainNode.gain.value = this.value;
   });
   
   
@@ -733,7 +738,7 @@ $(function() {
     panner.setPosition(pan, 0, 1 - Math.abs(pan));
     const sampleSource = audioContext.createBufferSource();
     sampleSource.buffer = audioBuffer;
-    sampleSource.connect(panner).connect(audioContext.destination)
+    sampleSource.connect(panner).connect(gainNode).connect(audioContext.destination)
     //sampleSource.connect(audioContext.destination);
     sampleSource.start(t);
     return sampleSource;
