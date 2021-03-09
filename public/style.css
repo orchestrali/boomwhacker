@@ -198,6 +198,8 @@ div.handle.small {
   left: 41px;
 }
 
+/*
+
 #c5 {
   left: 0px;
 }
@@ -261,6 +263,7 @@ div.handle.small {
 #d7 {
   left: 1500px;
 }
+*/
 
 #c5 > div, #c6 > div, #c7 > div {
   background-color: #e22;

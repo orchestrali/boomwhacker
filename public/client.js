@@ -20,6 +20,7 @@ $(function() {
   var list = [];
   var mypair = 0;
   var speed = 2;
+  var trebleloc = "right";
 
   var captain = false;
   var disconnected = false;
@@ -38,6 +39,7 @@ $(function() {
   const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
   const panner = audioCtx.createPanner();
   panner.panningModel = 'equalpower';
+  const gainNode = audioCtx.createGain();
   
   var stroke = 1; //1 for handstrokes, -1 for backstrokes
   var place = 0;
@@ -56,7 +58,7 @@ $(function() {
     $("#resume").show();
   });
   
-  $('input[type="text"],input[type="number"]').on("click", (e) => {
+  $("#container").on("click", 'input[type="text"],input[type="number"]', (e) => {
     e.stopPropagation();
     $("#resume").show();
   });
@@ -139,6 +141,18 @@ $(function() {
     //console.log(e.keyCode);
   });
   
+  $('input[name="trebleloc"]').on("change", function(e) {
+    trebleloc = $('input[name="trebleloc"]:checked').val();
+    $("div.bell").remove();
+    for (let i = 0; i < numbells; i++) {
+      addBell(bells[i], i);
+    }
+    bellnums();
+    if (mypair > 0) {
+      addControls(ordinals[(mypair-1)/2],mypair);
+      instructions();
+    }
+  });
   
   //allow captain(s) to change number of bells
   $("#numbells li").on("click", function(e) {
@@ -153,6 +167,10 @@ $(function() {
   $("#speed").change(function() {
     speed = Number($("#speed").val());
     socket.emit("speed", Number($("#speed").val()));
+  });
+  
+  $("#volume").on("change", function(e) {
+    gainNode.gain.value = this.value;
   });
   
   
@@ -233,7 +251,7 @@ $(function() {
   
   //reset received
   socket.on('reset', () => {
-    $("div.bell").attr("style", "");
+    
     $("#pn").css("top","131px");
     top = 131;
     currentrow = [];
@@ -245,6 +263,8 @@ $(function() {
     for (let i = 0; i < numbells; i++) {
       currentrow.push(i+1);
       if (i > 1) insidepairs.push(-1);
+      let left = 100 * (trebleloc === "right" ? i : numbells-1-i);
+      $("#"+bells[i].bell).attr("style","left:"+left+"px");
     }
   });
   
@@ -304,6 +324,7 @@ $(function() {
       //console.log(insidepairs);
       console.log(obj);
       if (obj.type === "cross") {
+        //build the new row
         let row = [];
         for (let i = 1; i < numbells; i+=2) {
           if (i === obj.pair) {
@@ -312,19 +333,15 @@ $(function() {
             row.push(currentrow[i-1], currentrow[i]);
           }
         }
-        let j = -1;
-        let k = 0;
+        //find and swap the bells
         for (let i = 0; i < 2; i++) {
-          k = 0;
-          let bell = bells.find(b => b.num === currentrow[obj.pair-1+i]);
-          let left = (numbells-obj.pair-i)*100;
+          let bell = bells.find(b => b.num === currentrow[obj.pair-1+i]); //start with the bell that needs to move up
+          let left = (trebleloc === "right" ? numbells-obj.pair-1+i : obj.pair-i)*100;
           let inside = insidepairs[obj.pair-2+i];
           if (inside === 1) {
-            k = j;
             insidepairs[obj.pair-2+i] *= -1;
           }
-          $("#"+bell.bell).css("left", (left+100*j)+ "px");
-          j*=-1;
+          $("#"+bell.bell).css("left", (left)+ "px");
         }
         currentrow = row;
         //socket.emit("currentrow", currentrow);
@@ -341,20 +358,21 @@ $(function() {
           arr2.push(o);
         }
         
-        let j = -1;
+        
         
         arr2.forEach(i => {
           if (i.stretch) {
             let bell = bells.find(b => b.num === i.bellnum);
-            let left = (numbells-i.startplace)*100;
+            let left = (trebleloc === "right" ? numbells-i.startplace : i.startplace-1)*100;
             if (i.startstretch === 1) { //if the bell has started to stretch, bring it back to place;
               $("#"+bell.bell).css("left", left+"px");
               insidepairs[i.startplace-2] = -1;
             } else {
+              let j = i.startplace % 2 === 0 ? 1 : -1;
               let otherplace = i.startplace+j;
               if (insidepairs[otherplace-2] === 1) { //if the other bell has stretched already
                 let otherbell = bells.find(b => b.num === currentrow[otherplace-1]);
-                let otherleft = (numbells-otherplace)*100;
+                let otherleft = (trebleloc === "right" ? numbells-otherplace : otherplace-1)*100;
                 let row = [currentrow[0]];
                 for (let k = 2; k < numbells; k += 2) {
                   if (k === i.startplace || k === otherplace) {
@@ -365,17 +383,18 @@ $(function() {
                 }
                 row.push(currentrow[numbells-1]);
                 currentrow = row;
-                $("#"+bell.bell).css("left", (left-j*100)+"px");
-                $("#"+otherbell.bell).css("left", (otherleft+j*100)+"px");
+                $("#"+bell.bell).css("left", (otherleft)+"px");
+                $("#"+otherbell.bell).css("left", (left)+"px");
                 insidepairs[i.startplace-2] = -1;
                 insidepairs[otherplace-2] = -1;
               } else {
+                if (trebleloc === "left") j *= -1;
                 $("#"+bell.bell).css("left", (left-j*50)+"px");
                 insidepairs[i.startplace-2] = 1;
               }
             }
           }
-          j *= -1;
+          
         });
         
       } 
@@ -463,7 +482,7 @@ $(function() {
     }
     for (let i = 0; i < numbells; i++) {
       currentrow.push(i+1);
-      addBell(bells[i]);
+      addBell(bells[i], i);
       if (i > 1) insidepairs.push(-1);
     }
     if (numbells != 6) {
@@ -549,15 +568,24 @@ $(function() {
   function updatestage(n) {
     if (n > numbells) {
       for (let i = numbells; i < n; i++) {
-        addBell(bells[i]);
+        addBell(bells[i], i);
         currentrow.push(i+1);
       }
     } else if (n < numbells) {
       let x = numbells-n;
       currentrow = currentrow.slice(0, n); //should this reset to rounds???
-      $("div.bell:nth-last-child(-n+"+x+")").detach();
+      if (trebleloc === "right") {
+        $("div.bell:nth-last-child(-n+"+x+")").detach();
+      } else {
+        $("div.bell:nth-child(-n+"+x+")").detach();
+      }
+      
     }
     numbells = n;
+    for (let i = 0; i < numbells; i++) {
+      let left = 100 * (trebleloc === "right" ? i : numbells-1-i);
+      $("#"+bells[i].bell).attr("style","left:"+left+"px");
+    }
     delay = speed/numbells;
     $("#numbells li").css({color: "black", "background-color": "white"});
     let stage = stages[(numbells-4)/2];
@@ -587,6 +615,7 @@ $(function() {
         delete bells[i].num;
       }
       num--;
+      
     }
   }
   
@@ -709,7 +738,7 @@ $(function() {
     panner.setPosition(pan, 0, 1 - Math.abs(pan));
     const sampleSource = audioContext.createBufferSource();
     sampleSource.buffer = audioBuffer;
-    sampleSource.connect(panner).connect(audioContext.destination)
+    sampleSource.connect(panner).connect(gainNode).connect(audioContext.destination)
     //sampleSource.connect(audioContext.destination);
     sampleSource.start(t);
     return sampleSource;
@@ -733,7 +762,7 @@ $(function() {
   
   function addControls(id, n) {
     $("div#controls").children().remove();
-    let left = 100 * (numbells-1-n) + 48;
+    let left = 100 * (trebleloc === "right" ? numbells-1-n : n-1) + 48;
     let div = `
         <div class="controls" id="${id}" style="left:${left}px;">
           `;
@@ -760,7 +789,7 @@ $(function() {
                `,
                  "stroke-width": "2",
                  stroke: "black"};
-  function addBell(bell) {
+  function addBell(bell, i) {
     let svg = document.createElementNS(svgurl, "svg");
     let info = {width: "100", height: "100", viewBox: bell.viewbox};
     for (let key in info) {
@@ -772,9 +801,11 @@ $(function() {
     }
     svg.appendChild(path);
     
+    let left = 100 * (trebleloc === "right" ? i : numbells-1-i);
     let div = document.createElement("div");
     div.id = bell.bell;
     div.setAttribute("class", "bell");
+    div.setAttribute("style", "left:"+left+"px");
     div.appendChild(svg);
     let base = document.createElement("div");
     base.setAttribute("class", "base");
@@ -783,7 +814,12 @@ $(function() {
     div.appendChild(base);
     div.appendChild(handle);
     let room = document.getElementById("bells");
-    room.appendChild(div);
+    if (trebleloc === "right") {
+      room.appendChild(div);
+    } else {
+      room.prepend(div);
+    }
+    
   }
   
   function instructions() {
@@ -810,7 +846,7 @@ $(function() {
           arr = pnCondense(method.pn);
           str = arr.join("<br/>");
           let n = mypair === 0 ? numbells/2 : mypair;
-          let left = 100 * (numbells-1-n) + 48;
+          let left = 100 * (trebleloc === "right" ? numbells-1-n : n-1) + 48;
           $("#pn").css({left: left+"px", width: "100px"});
           let html = `<div class="cover top" style="left:${left}px"></div><div class="cover bottom" style="left:${left}px;height:${31*method.pn.length}px;background-image:linear-gradient(0deg, white, ${31*method.pn.length-10}px, #fff0);"></div>
           <div class="rect" style="left:${left-60}px"></div><div class="triangle" style="left:${left}px"></div>`;
