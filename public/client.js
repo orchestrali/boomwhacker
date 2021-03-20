@@ -67,39 +67,15 @@ $(function() {
     $("#resume").hide();
   });
   
-  //enter button click
-  $("#enterbutton").on("click", function(e) {
-    $("#resume").hide();
-    if (audioCtx.state === 'suspended') {
-        audioCtx.resume();
-    }
-    //playSample(audioCtx, bells[0].buffer);
-    name = $("#name").val();
-    let secret = $("#secret").val();
-    if (name.length && !/^\s+$/.test(name) && secret.length && !/^[^\w]+$/.test(secret) && !list.includes(name)) {
-      socket.emit("entrant", {name: name, secret: secret});
-
-    } else if (list.includes(name)) {
-      $("#name").val("");
-      $("#name").attr("placeholder", '"'+name+'" already in use; pick another name');
-    } else {
-      $("#name").val("");
-      $("#secret").val("");
-      $("#name").attr("placeholder", "invalid name or wrong secret");
-    }
-
-  });
   
-  //
-  socket.on('wrong', () => {
-    $("#secret").val("");
-    $("#secret").attr("placeholder", "invalid secret");
-  });
+  //enter button click
+  $("#enterbutton").on("click", enter);
+  
   
   //send chat messages
   input.addEventListener('change', function(e) {
     
-    socket.emit("message", "chat " + name + ": " + input.value);
+    socket.emit("chat", name + ": " + input.value); ///////
     input.value = "";
   });
   
@@ -116,7 +92,7 @@ $(function() {
         if (res) {
           method.title = res.title;
           method.pn = res.pnFull;
-          socket.emit("method", method);
+          socket.emit("method", method); ///////
         } else {
           $("#method > p").text("Method not found");
         }
@@ -141,6 +117,7 @@ $(function() {
     //console.log(e.keyCode);
   });
   
+  
   $('input[name="trebleloc"]').on("change", function(e) {
     trebleloc = $('input[name="trebleloc"]:checked').val();
     $("div.bell").remove();
@@ -158,71 +135,29 @@ $(function() {
   $("#numbells li").on("click", function(e) {
     if (captain && !playing) {
       let n = Number($(this).text());
-      socket.emit("stage", n);
+      socket.emit("stage", n); //////
       updatestage(n);
     }
+  });
+  
+  //bell assignment changed
+  $("#entrants").on("change", "select.pair", function() {
+    console.log($(this).children("option:checked").val());
+    let n = $(this).prev("span").text();
+    socket.emit("assign", {name: n, pair: Number($(this).children("option:checked").val())}); /////////
   });
   
   //change speed
   $("#speed").change(function() {
     speed = Number($("#speed").val());
-    socket.emit("speed", Number($("#speed").val()));
+    socket.emit("speed", Number($("#speed").val())); ///////
   });
   
   $("#volume").on("change", function(e) {
     gainNode.gain.value = this.value;
   });
   
-  
-  socket.on("speed", (s) => {
-    speed = s;
-    delay = s/numbells;
-  });
-  
-  
-  
-  socket.on("names", (nn) => {
-    list = nn;
-  });
-  
-  socket.on("prevnames", (nn) => {
-    console.log(nn);
-    if (nn.includes(name)) {
-      console.log("reconnected!");
-    }
-  })
-  
-  //when someone enters the chamber
-  socket.on("entrance", function(m) {
-    if (!disconnected && ready) {
-      entrants = m.info;
-      if (m.info.find(o => o.name === name).conductor) captain = true;
-      //console.log("numbers "+speed + " "+ delay);
-      input.placeholder = "Say something, " + name;
-      updatelist(m);
-      $("#enter").hide();
-      $("#container").show();
-      //socket.emit("method", method); //just here for testing purposes
-      if (captain) {
-        //$("#numbells").after('<ul id="conduct"> <li id="start">Start</li><li id="reset">Reset</li> </ul>');
-        $("#conduct").show();
-        $(".conduct").show();
-        $("#keyboard").hide();
-      }
-      
-      
-    }
-    
-  });
-  
-  //bell assignment changed
-  $("#entrants").on("change", "select.pair", function() {
-        console.log($(this).children("option:checked").val());
-        let n = $(this).prev("span").text();
-        socket.emit("assign", {name: n, pair: Number($(this).children("option:checked").val())})
-      });
-  
-  //start or stop sound
+  //start button click
   $("#start").on("click", function() {
     if (!playing) {
       socket.emit("start");
@@ -246,25 +181,6 @@ $(function() {
   $("#reset").on("click", function() {
     if (!playing) {
       socket.emit("reset");
-    }
-  });
-  
-  //reset received
-  socket.on('reset', () => {
-    
-    $("#pn").css("top","131px");
-    top = 131;
-    currentrow = [];
-    insidepairs = [];
-    rowArr = [];
-    rownum = -1;
-    stroke = 1;
-    place = 0;
-    for (let i = 0; i < numbells; i++) {
-      currentrow.push(i+1);
-      if (i > 1) insidepairs.push(-1);
-      let left = 100 * (trebleloc === "right" ? i : numbells-1-i);
-      $("#"+bells[i].bell).attr("style","left:"+left+"px");
     }
   });
   
@@ -316,6 +232,84 @@ $(function() {
     }
     
   });
+  
+  
+  
+  //sockets
+  
+  
+  socket.on('wrong', () => {
+    $("#secret").val("");
+    $("#secret").attr("placeholder", "invalid secret");
+  });
+  
+  
+  
+  socket.on("speed", (s) => {
+    speed = s;
+    delay = s/numbells;
+  });
+  
+  
+  
+  socket.on("names", (nn) => {
+    list = nn;
+  });
+  
+  socket.on("prevnames", (nn) => {
+    console.log(nn);
+    if (nn.includes(name)) {
+      console.log("reconnected!");
+    }
+  })
+  
+  //when this socket? enters the chamber
+  socket.on("entrance", function(m) {
+    if (!disconnected && ready) {
+      entrants = m.info;
+      if (m.info.find(o => o.name === name).conductor) captain = true;
+      //console.log("numbers "+speed + " "+ delay);
+      input.placeholder = "Say something, " + name;
+      updatelist(m);
+      $("#enter").hide();
+      $("#container").show();
+      //socket.emit("method", method); //just here for testing purposes
+      if (captain) {
+        //$("#numbells").after('<ul id="conduct"> <li id="start">Start</li><li id="reset">Reset</li> </ul>');
+        $("#conduct").show();
+        $(".conduct").show();
+        $("#keyboard").hide();
+      }
+      
+      
+    }
+    
+  });
+  
+  
+  
+  
+  
+  //reset received
+  socket.on('reset', () => {
+    
+    $("#pn").css("top","131px");
+    top = 131;
+    currentrow = [];
+    insidepairs = [];
+    rowArr = [];
+    rownum = -1;
+    stroke = 1;
+    place = 0;
+    for (let i = 0; i < numbells; i++) {
+      currentrow.push(i+1);
+      if (i > 1) insidepairs.push(-1);
+      let left = 100 * (trebleloc === "right" ? i : numbells-1-i);
+      $("#"+bells[i].bell).attr("style","left:"+left+"px");
+    }
+  });
+  
+  
   
   //change received
   socket.on("change", (obj) => {
@@ -530,6 +524,32 @@ $(function() {
   });
   
   
+  // FUNCTIONS
+  
+  
+  function enter(e) {
+    $("#resume").hide();
+    if (audioCtx.state === 'suspended') {
+        audioCtx.resume();
+    }
+    //playSample(audioCtx, bells[0].buffer);
+    name = $("#name").val();
+    let secret = $("#secret").val();
+    if (name.length && !/^\s+$/.test(name) && secret.length && !/^[^\w]+$/.test(secret) && !list.includes(name)) {
+      socket.emit("entrant", {name: name, secret: secret});
+
+    } else if (list.includes(name)) {
+      $("#name").val("");
+      $("#name").attr("placeholder", '"'+name+'" already in use; pick another name');
+    } else {
+      $("#name").val("");
+      $("#secret").val("");
+      $("#name").attr("placeholder", "invalid name or wrong secret");
+    }
+
+  }
+  
+  
   function setMethod(obj) {
     method = obj;
     $("#method > p").text("Current method: "+method.title);
@@ -691,6 +711,7 @@ $(function() {
     if (lastmoved != bellmove) {
       $("#"+bellmove).css("top", 150 - currentstroke*25 + "px");
       lastmoved = bellmove;
+      //also animate the pn instructions
       let next = mypair > 0 ? place === mypair : place === numbells-1;
       if (instruct && next && rownum >= 0) {
         top -= 31;
