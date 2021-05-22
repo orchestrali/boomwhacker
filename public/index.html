@@ -8,17 +8,22 @@
   <body>
     <div id="closed">
       <h3>
-        Connection error - try reloading to reenter.
+        Connection error - attempting to reconnect...
       </h3>
     </div>
+    
     <div id="enter">
-      <label for="name">Enter a display name to join the ringing chamber:</label>
+      <label for="name">Enter a display name for yourself:</label>
       <input id="name" type="text" />
       <label for="secret">Enter the secret word:</label>
       <input id="secret" type="text" autocomplete="off"/>
       <button type="button" id="enterbutton">
         Enter the chamber
       </button>
+      <div id="wait" class="hidden">
+        <img  alt="loading" src="https://cdn.glitch.com/73aed9e9-7ed2-40e5-93da-eb7538e8d42c%2Floading.gif?v=1618520638359" />
+        Loading...
+      </div>
     </div>
     
     <div id="container" style="display:none">
@@ -46,6 +51,48 @@
           <label for="speed">Row duration in seconds: </label>
           <input id="speed" type="number" value="2.0" step="0.1">
         </div>
+        <div id="composition" >
+          
+          <div id="method" class="conduct">
+            <h5>
+              Choose a method or composition
+            </h5>
+            <ul>
+              <li><label for="methodname" >Search for a method:</label></li>
+              <li><input type="text" id="methodname" placeholder="Enter a complete method title (case sensitive)"/></li>
+              <li>
+                <label for="placenot">Or, select a stage and enter place notation: </label>
+                <select id="stage">
+                  <option value disabled selected></option>
+                  <option value="minimus">4</option>
+                  <option value="doubles">5</option>
+                  <option value="minor">6</option>
+                  <option value="triples">7</option>
+                  <option value="major">8</option>
+                  <option value="caters">9</option>
+                  <option value="royal">10</option>
+                  <option value="cinques">11</option>
+                  <option value="maximus">12</option>
+                  <option value="sextuples">13</option>
+                  <option value="fourteen">14</option>
+                  <option value="septuples">15</option>
+                  <option value="sixteen">16</option>
+                </select>
+                <input type="text" id="placenot" />
+                
+              </li>
+              
+              <li>
+                <label for="complib">Or, enter a complib.org composition id:</label>
+                <input type="text" id="complib" />
+              </li>
+            </ul>
+            
+          </div>
+          <p>
+            
+          </p>
+        </div>
         <h4>
           Sound
         </h4>
@@ -69,23 +116,17 @@
               <input type="text" value="s" id="stretchkey" maxlength="1" />
             </li>
             <li>
-              <label for="stretchRkey">High place: </label>
-              <input type="text" value="e" id="stretchRkey" maxlength="1" />
-            </li>
-            <li>
               <label for="stretchLkey">Low place: </label>
               <input type="text" value="r" id="stretchLkey" maxlength="1" />
+            </li>
+            <li>
+              <label for="stretchRkey">High place: </label>
+              <input type="text" value="e" id="stretchRkey" maxlength="1" />
             </li>
           </ul>
           
         </div>
-        <div id="method">
-          <label for="methodname" class="conduct">Search for a method:</label>
-          <input type="text" id="methodname" class="conduct"/>
-          <p>
-            
-          </p>
-        </div>
+        
         <div id="instructopts">
           Instructions to display
           <ul>
@@ -95,9 +136,9 @@
             <li>
               <label for="pnanim"><input type="radio" id="pnanim" name="instruct" />place notation animated</label>
             </li>
-            <!--<li>
+            <li>
               <label for="personal"><input type="radio" id="personal" name="instruct" />personal instructions</label>
-            </li>-->
+            </li>
             <li>
               <label for="pnnone"><input type="radio" id="pnnone" name="instruct" />none</label>
             </li>

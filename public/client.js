@@ -1,4 +1,7 @@
 $("#container").hide();
+var conductkeys = [
+  ["/", ";"],[".","l","o","w"],[",","k","i","e"],["m","j","u","r"],["v","f","y","t"],["c","d","h","g"],["x","s","n","b"],["z","a"]
+];
 
 $(function() {
   
@@ -9,7 +12,7 @@ $(function() {
   
   var textarea = document.querySelector('textarea');
   var input = document.querySelector('input#chat');
-  var stages = ["minimus", "minor", "major", "royal", "maximus", "fourteen", "sixteen"];
+  var stages = ["minimus", "doubles", "minor", "triples", "major", "caters", "royal", "cinques", "maximus", "sextuples", "fourteen", "septuples", "sixteen"];
   var ordinals = ["first", "third", "fifth", "seventh", "ninth", "eleventh", "thirteenth", "fifteenth"];
   var bells;
   var numbells;
@@ -21,6 +24,7 @@ $(function() {
   var mypair = 0;
   var speed = 2;
   var trebleloc = "right";
+  var keyboardplaces;
 
   var captain = false;
   var disconnected = false;
@@ -31,9 +35,12 @@ $(function() {
     title: "Bastow Little Bob Minor",
     pn: ["x", [1,2], "x", [1,6]]
   };
+  var comp;
   var instructopt = "pnnone";
   var instruct = false;
   let top = 131;
+  let firstcall;
+  let robotpairs = [];
   
   var bellurl = "https://cdn.glitch.com/3222d552-1e4d-4657-8891-89dc006ccce8%2F";
   const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
@@ -44,11 +51,11 @@ $(function() {
   var stroke = 1; //1 for handstrokes, -1 for backstrokes
   var place = 0;
   var nextBellTime = 0.0;
-  var rownum = -1;
+  var rownum = 0;
   var rowArr = [];
   var timeout;
   
-  console.log("numbers "+speed + " "+ delay);
+  //console.log("numbers "+speed + " "+ delay);
   
   $(window).focus(() => {
     $("#resume").hide();
@@ -67,10 +74,28 @@ $(function() {
     $("#resume").hide();
   });
   
+  // error in script!
+  window.onerror = function(msg, src, lineno, colno, error) {
+    let message = [
+      "Message: " + msg,
+      
+      "Line: " + lineno,
+      "Column: " + colno
+    ];
+    //console.log(error);
+    onerror(message);
+    alert("Congratulations, you've found a bug! If Alison is in the room, she should know already. If not, you might send her the message below. You'll probably have to reload to get the chamber to work again.\n" + message.join("\n"));
+    return true;
+  }
+  
   
   //enter button click
   $("#enterbutton").on("click", enter);
-  
+  $("input#secret").on("keyup", (e) => {
+    if (e.code === "Enter") {
+      enter(e);
+    }
+  });
   
   //send chat messages
   input.addEventListener('change', function(e) {
@@ -79,28 +104,60 @@ $(function() {
     input.value = "";
   });
   
+  //search for a method
   document.querySelector('#methodname').addEventListener('change', function(e) {
     let val = $("#methodname").val();
-    $("#method > p").text("Loading...");
-    if (val.length) {
+    $("#composition > p").text("Loading...");
+    if (val.length && val.includes(" ") && /[a-z]/i.test(val)) {
       let xhr = new XMLHttpRequest();
       xhr.open('GET', 'https://vivacious-port.glitch.me/find/method?title='+val.split(" ").join("+"), true);
       xhr.send();
       
       xhr.onload = function () {
-        let res = JSON.parse(xhr.responseText);
+        let res = xhr.responseText;
         if (res) {
+          res = JSON.parse(res);
+          method = {};
           method.title = res.title;
           method.pn = res.pnFull;
+          method.stage = res.stage;
           socket.emit("method", method); ///////
         } else {
-          $("#method > p").text("Method not found");
+          $("#composition > p").text("Method not found");
         }
       }
+      xhr.onerror = function () {
+        $("#composition > p").text("Error searching for method");
+      }
+    } else {
+      $("#composition > p").text("Invalid method title");
     }
     
   });
   
+  //enter place notation
+  document.querySelector('#placenot').addEventListener('change', function(e) {
+    let val = $("#placenot").val();
+    let stage = stages.indexOf($("#stage").val()) + 4;
+    console.log($("#stage").val());
+    if (stage > 3 && /^[\d,&\.\+etx\-]+$/i.test(val)) {
+      $("#composition > p").text("Loading...");
+      socket.emit("placenot", {pn: val, stage: stage});
+    } else {
+      $("#composition > p").text("Invalid place notation");
+    }
+  });
+  
+  //enter complib composition id
+  document.querySelector('#complib').addEventListener('change', function(e) {
+    let val = $("#complib").val();
+    if (/^\d+$/.test(val)) {
+      $("#composition > p").text("Loading...");
+      socket.emit("complib", val);
+    }
+  });
+  
+  //choose instruction type
   $('input[name="instruct"]').change(function() {
     //console.log(mypair);
     
@@ -117,7 +174,7 @@ $(function() {
     //console.log(e.keyCode);
   });
   
-  
+  //reverse bell direction
   $('input[name="trebleloc"]').on("change", function(e) {
     trebleloc = $('input[name="trebleloc"]:checked').val();
     $("div.bell").remove();
@@ -125,7 +182,8 @@ $(function() {
       addBell(bells[i], i);
     }
     bellnums();
-    if (mypair > 0) {
+    if (mypair > 0 && !captain) {
+      $(".controls").remove();
       addControls(ordinals[(mypair-1)/2],mypair);
       instructions();
     }
@@ -147,12 +205,22 @@ $(function() {
     socket.emit("assign", {name: n, pair: Number($(this).children("option:checked").val())}); /////////
   });
   
+  $("#entrants").on("change", "div.assign", function() {
+    let arr = [];
+    $(this).find("input:checked").each(function() {
+      arr.push(Number($(this).val()));
+    });
+    
+    socket.emit("assign", {name: "Sidra🤖", pairs: arr});
+  });
+  
   //change speed
   $("#speed").change(function() {
     speed = Number($("#speed").val());
     socket.emit("speed", Number($("#speed").val())); ///////
   });
   
+  //change volume
   $("#volume").on("change", function(e) {
     gainNode.gain.value = this.value;
   });
@@ -188,8 +256,10 @@ $(function() {
   $("#controls").on("click", "button", function() {
     console.log($(this).attr("class"));
     //console.log(mypair);
-    socket.emit("change", {type: $(this).attr("class"), pair: mypair});
+    let pair = ordinals.indexOf($(this).parent().attr("id"))*2+1;
+    socket.emit("change", {type: $(this).attr("class"), pair: pair});
   });
+  
   
   //keyboard controls
   $("body").on("keypress", function(e) {
@@ -237,33 +307,85 @@ $(function() {
   
   //sockets
   
-  
-  socket.on('wrong', () => {
-    $("#secret").val("");
-    $("#secret").attr("placeholder", "invalid secret");
-  });
-  
-  
-  
-  socket.on("speed", (s) => {
-    speed = s;
-    delay = s/numbells;
-  });
-  
-  
-  
+  //list of names to prevent duplicates
   socket.on("names", (nn) => {
     list = nn;
   });
   
-  socket.on("prevnames", (nn) => {
-    console.log(nn);
-    if (nn.includes(name)) {
-      console.log("reconnected!");
+  //get the bells array from the server
+  socket.on("bells", (bb) => {
+    if (!ready && name) {
+      socket.emit("reenter", {name: name, pair: mypair});
+    } else {
+      bells = bb;
+      for (let i = 0; i < bells.length; i++) {
+        bells[i].sound = new Audio();
+        bells[i].sound.src = "";
+      }
+      setupSample(0)
     }
-  })
+    
+    
+  });
   
-  //when this socket? enters the chamber
+  socket.on("duplicate", () => {
+    $("#name").val("");
+    $("#name").attr("placeholder", '"'+name+'" already in use; pick another name');
+    $("#name,#secret").prop("disabled", false);
+    $("#waiting").addClass("hidden");
+  });
+  
+  //secret is wrong
+  socket.on('wrong', () => {
+    $("#secret").val("");
+    $("#secret").attr("placeholder", "invalid secret");
+    $("#name,#secret").prop("disabled", false);
+    $("#waiting").addClass("hidden");
+  });
+  
+  
+  //this socket enters
+  socket.on("numbells", (obj) => {
+    //console.log(playing);
+    console.log("numbells: "+obj.num);
+    ready = true;
+    numbells = obj.num;
+    speed = obj.status.speed;
+    currentrow = obj.status.currentrow;
+    insidepairs = obj.status.insidepairs;
+    delay = speed/numbells;
+    if (obj.playing) {
+      $("#playing").show();
+    }
+    for (let i = 0; i < numbells; i++) {
+      addBell(bells[i], i);
+    }
+    if (numbells != 6) {
+      $("#numbells li").css({color: "black", "background-color": "white"});
+      let stage = stages[(numbells-4)];
+      $("li#"+stage).css({color: "white", "background-color": "black"});
+    }
+    bellnums();
+    if (numbells < 12) {
+      $("div#room").attr("style", "");
+    } else {
+      let val = 1-(numbells-10)/16;
+      $("div#room").css("transform", "scale("+val+")");
+    }
+    $("#enter").hide();
+    $("#container").show();
+  });
+  
+  socket.on("reopen", state => {
+    ready = true;
+    $("#enter").hide();
+    $("#resume").hide();
+    $("#closed").hide();
+    $("#container").show();
+  });
+  
+  
+  //when anyone enters the chamber
   socket.on("entrance", function(m) {
     if (!disconnected && ready) {
       entrants = m.info;
@@ -271,24 +393,50 @@ $(function() {
       //console.log("numbers "+speed + " "+ delay);
       input.placeholder = "Say something, " + name;
       updatelist(m);
-      $("#enter").hide();
-      $("#container").show();
-      //socket.emit("method", method); //just here for testing purposes
+      
       if (captain) {
-        //$("#numbells").after('<ul id="conduct"> <li id="start">Start</li><li id="reset">Reset</li> </ul>');
+        $(".controls").remove();
+        assignCaptain();
         $("#conduct").show();
         $(".conduct").show();
         $("#keyboard").hide();
       }
-      
-      
+    }
+    
+  });
+  
+  socket.on("disconnect", (r) => {
+    console.log(r);
+    if (["io server disconnect", "io client disconnect"].includes(r)) {
+      $("#closed > h3").text("Connection error - try reloading to enter.");
+    } else {
+      setTimeout(function() {
+        if (!ready) {
+          $("#closed > h3").text("Reconnect failed - try reloading to enter.");
+        }
+      }, 3000);
+    }
+    ready = false;
+    captain = false;
+    $("#container").hide();
+    $("#enter").hide();
+    $("#closed").show();
+  });
+  
+  //stagechange from a(nother) captain
+  socket.on("stagechange", (n) => {
+    if (name) {
+      updatestage(n);
     }
     
   });
   
   
-  
-  
+  //speed change
+  socket.on("speed", (s) => {
+    speed = s;
+    delay = s/numbells;
+  });
   
   //reset received
   socket.on('reset', () => {
@@ -298,12 +446,13 @@ $(function() {
     currentrow = [];
     insidepairs = [];
     rowArr = [];
-    rownum = -1;
+    rownum = 0;
     stroke = 1;
     place = 0;
+    lastrow = 0;
     for (let i = 0; i < numbells; i++) {
       currentrow.push(i+1);
-      if (i > 1) insidepairs.push(-1);
+      insidepairs.push(-1);
       let left = 100 * (trebleloc === "right" ? i : numbells-1-i);
       $("#"+bells[i].bell).attr("style","left:"+left+"px");
     }
@@ -311,94 +460,27 @@ $(function() {
   
   
   
-  //change received
-  socket.on("change", (obj) => {
-    console.log("change received");
-    if (ready) {
-      //console.log(insidepairs);
-      console.log(obj);
-      if (obj.type === "cross") {
-        //build the new row
-        let row = [];
-        for (let i = 1; i < numbells; i+=2) {
-          if (i === obj.pair) {
-            row.push(currentrow[i], currentrow[i-1]);
-          } else {
-            row.push(currentrow[i-1], currentrow[i]);
-          }
+  
+  //what the server sends when there has been a change (as in change ringing)
+  socket.on("nextrow", obj => {
+    for (let i = 0; i < numbells; i++) {
+      let bell = bells.find(b => b.num === obj.row[i]);
+      let left = (trebleloc === "right" ? numbells-1-i : i)*100;
+      if (obj.row[i] != currentrow[i]) {
+        $("#"+bell.bell).css("left", left+"px");
+      } else if (obj.insides[i] != insidepairs[i]) {
+        if (obj.insides[i] === 1) {
+          left += i%2 === 0 ? 50 : -50;
         }
-        //find and swap the bells
-        for (let i = 0; i < 2; i++) {
-          let bell = bells.find(b => b.num === currentrow[obj.pair-1+i]); //start with the bell that needs to move up
-          let left = (trebleloc === "right" ? numbells-obj.pair-1+i : obj.pair-i)*100;
-          let inside = insidepairs[obj.pair-2+i];
-          if (inside === 1) {
-            insidepairs[obj.pair-2+i] *= -1;
-          }
-          $("#"+bell.bell).css("left", (left)+ "px");
-        }
-        currentrow = row;
-        //socket.emit("currentrow", currentrow);
-      } else if (obj.type != "places") {
-        let arr = [];
-        let arr2 = [];
-        for (let i = 0; i < 2; i++) {
-          let o = {
-            startplace: obj.pair+i,
-            bellnum: currentrow[obj.pair+i-1],
-            stretch: [i === 0 ? "stretchR" : "stretchL", "stretch"].includes(obj.type),
-            startstretch: insidepairs[obj.pair+i-2]
-          }
-          arr2.push(o);
-        }
-        
-        
-        
-        arr2.forEach(i => {
-          if (i.stretch) {
-            let bell = bells.find(b => b.num === i.bellnum);
-            let left = (trebleloc === "right" ? numbells-i.startplace : i.startplace-1)*100;
-            if (i.startstretch === 1) { //if the bell has started to stretch, bring it back to place;
-              $("#"+bell.bell).css("left", left+"px");
-              insidepairs[i.startplace-2] = -1;
-            } else {
-              let j = i.startplace % 2 === 0 ? 1 : -1;
-              let otherplace = i.startplace+j;
-              if (insidepairs[otherplace-2] === 1) { //if the other bell has stretched already
-                let otherbell = bells.find(b => b.num === currentrow[otherplace-1]);
-                let otherleft = (trebleloc === "right" ? numbells-otherplace : otherplace-1)*100;
-                let row = [currentrow[0]];
-                for (let k = 2; k < numbells; k += 2) {
-                  if (k === i.startplace || k === otherplace) {
-                    row.push(currentrow[k], currentrow[k-1]);
-                  } else {
-                    row.push(currentrow[k-1], currentrow[k]);
-                  }
-                }
-                row.push(currentrow[numbells-1]);
-                currentrow = row;
-                $("#"+bell.bell).css("left", (otherleft)+"px");
-                $("#"+otherbell.bell).css("left", (left)+"px");
-                insidepairs[i.startplace-2] = -1;
-                insidepairs[otherplace-2] = -1;
-              } else {
-                if (trebleloc === "left") j *= -1;
-                $("#"+bell.bell).css("left", (left-j*50)+"px");
-                insidepairs[i.startplace-2] = 1;
-              }
-            }
-          }
-          
-        });
-        
-      } 
+        $("#"+bell.bell).css("left", left+"px");
+      }
       
-      console.log(insidepairs);
-      console.log(currentrow);
     }
-    
+    currentrow = obj.row;
+    insidepairs = obj.insides;
   });
   
+  //start sounds
   socket.on("start", () => {
     if (ready) {
       console.log("starting play?");
@@ -414,6 +496,7 @@ $(function() {
     }
   });
   
+  //stop sounds
   socket.on("stop", (status) => {
     clearTimeout(timeout);
     $("#playing").hide();
@@ -435,16 +518,21 @@ $(function() {
     playing = false;
   });
   
+  //assign someone
   socket.on("assign", (obj) => {
     if (ready) {
       entrants = obj;
       updatelist({info: obj});
+      
       let pair = entrants.find(e => e.name === name).pair;
       if (pair) {
         mypair = pair;
-        addControls(ordinals[(pair-1)/2], pair);
-      } else {
-        $("#controls").children().remove();
+        if (!captain) {
+          $(".controls").remove();
+          addControls(ordinals[(pair-1)/2], pair);
+        }
+      } else if (!captain) {
+        $(".controls").remove();
       }
     }
     
@@ -452,45 +540,9 @@ $(function() {
   
   socket.on("method", setMethod);
   
-  //get the bells array from the server
-  socket.on("bells", (bb) => {
-    bells = bb;
-    for (let i = 0; i < bells.length; i++) {
-      bells[i].sound = new Audio();
-      bells[i].sound.src = "";
-    }
-    setupSample(0)
-    //.then(() => {console.log("sounds buffered")});
-  });
   
-  //get number of bells on entrance
-  socket.on("numbells", (obj) => {
-    console.log(playing);
-    console.log("numbells: "+obj.num);
-    ready = true;
-    numbells = obj.num;
-    speed = obj.status.speed;
-    delay = speed/numbells;
-    if (obj.playing) {
-      $("#playing").show();
-    }
-    for (let i = 0; i < numbells; i++) {
-      currentrow.push(i+1);
-      addBell(bells[i], i);
-      if (i > 1) insidepairs.push(-1);
-    }
-    if (numbells != 6) {
-      $("#numbells li").css({color: "black", "background-color": "white"});
-      let stage = stages[(numbells-4)/2];
-      $("li#"+stage).css({color: "white", "background-color": "black"});
-    }
-    bellnums();
-  });
   
-  //stagechange from a(nother) captain
-  socket.on("stagechange", (n) => {
-    updatestage(n);
-  });
+  
   
   //chat message received or updated entrants list
   socket.on("message", function(m) {
@@ -506,22 +558,8 @@ $(function() {
     
   });
   
-  socket.on("error", (err) => {
-    console.log("error");
-    console.log(Object.keys(err));
-  });
   
-  socket.on("disconnect", (r) => {
-    console.log(r);
-    //if (r === "io server disconnect") {
-      ready = false;
-      captain = false;
-      disconnected = true;
-      $("#container").hide();
-      $("#enter").hide();
-      $("#closed").show();
-    //}
-  });
+  
   
   
   // FUNCTIONS
@@ -534,10 +572,12 @@ $(function() {
     }
     //playSample(audioCtx, bells[0].buffer);
     name = $("#name").val();
+    let badchar = !/^[a-z]/i.test(name);
     let secret = $("#secret").val();
-    if (name.length && !/^\s+$/.test(name) && secret.length && !/^[^\w]+$/.test(secret) && !list.includes(name)) {
+    if (name.length && !/^\s+$/.test(name) && secret.length && !/^[^\w]+$/.test(secret) && !list.includes(name) && !badchar) {
       socket.emit("entrant", {name: name, secret: secret});
-
+      $("#wait").removeClass("hidden");
+      $("#name,#secret").prop("disabled", true);
     } else if (list.includes(name)) {
       $("#name").val("");
       $("#name").attr("placeholder", '"'+name+'" already in use; pick another name');
@@ -549,18 +589,31 @@ $(function() {
 
   }
   
+  function onerror(e) {
+    socket.emit("error", {error: e});
+  }
+  
   
   function setMethod(obj) {
-    method = obj;
-    $("#method > p").text("Current method: "+method.title);
-    $("#instructopts").show();
-    instructions();
+    if (name) {
+      if (obj.pn) {
+        comp = null;
+        method = obj;
+        $("#composition > p").text("Current method: "+method.title);
+        $("#instructopts").show();
+        instructions();
+      } else {
+        $("#composition > p").text("Invalid place notation");
+      }
+    }
+    
   }
   
   
   
   function updatelist(m) {
     $("#entrants li").remove();
+    $(".ringer").remove();
     m.info.forEach((e) => {
       if (e.name === name && e.conductor) {
         captain = true;
@@ -568,8 +621,25 @@ $(function() {
       }
       let c = e.conductor ? " (C)" : "";
       updatePairOpts(e.pair);
+      if (e.pair) addName(e.name, e.pair);
       let d = captain ? "" : " disabled";
-      $("#entrants").append('<li><span>'+e.name+ '</span>' + c+'<select class="pair"'+d+'>'+pairOpts+'</select></li>');
+      if (e.name === "Sidra🤖") {
+        let html = '<li><span>'+e.name+ '</span><div class="assign'+ (captain ? ' active"' : '"' ) + '><span class="summary">' + e.pairs.join(",") + '</span><ul class="dropdown">';
+        for (let i = 1; i < numbells; i+=2) {
+          html += `
+          <li><input type="checkbox" id="robot${i}" value="${i}" ${e.pairs.includes(i) ? "checked" : ""}/><label for="robot${i}">${i}-${i+1}</label></li>`;
+          if (e.pairs.includes(i)) {
+            addName(e.name, i);
+          }
+        }
+        html += '</ul></div></li>';
+        $("#entrants").append(html);
+        robotpairs = e.pairs;
+        console.log(robotpairs);
+      } else {
+        $("#entrants").append('<li><span>'+e.name+ '</span>' + c+'<select class="pair"'+d+'>'+pairOpts+'</select></li>');
+      }
+      
     });
   }
   
@@ -589,11 +659,10 @@ $(function() {
     if (n > numbells) {
       for (let i = numbells; i < n; i++) {
         addBell(bells[i], i);
-        currentrow.push(i+1);
+        
       }
     } else if (n < numbells) {
       let x = numbells-n;
-      currentrow = currentrow.slice(0, n); //should this reset to rounds???
       if (trebleloc === "right") {
         $("div.bell:nth-last-child(-n+"+x+")").detach();
       } else {
@@ -602,26 +671,36 @@ $(function() {
       
     }
     numbells = n;
+    currentrow = [];
+    insidepairs = [];
     for (let i = 0; i < numbells; i++) {
       let left = 100 * (trebleloc === "right" ? i : numbells-1-i);
       $("#"+bells[i].bell).attr("style","left:"+left+"px");
+      currentrow.push(i+1);
+      insidepairs.push(-1);
+    }
+    if (numbells < 12) {
+      $("div#room").attr("style", "");
+    } else {
+      let val = 1-(numbells-10)/16;
+      $("div#room").css("transform", "scale("+val+")");
     }
     delay = speed/numbells;
     $("#numbells li").css({color: "black", "background-color": "white"});
-    let stage = stages[(numbells-4)/2];
+    let stage = stages[(numbells-4)];
     $("li#"+stage).css({color: "white", "background-color": "black"});
     bellnums();
     for (let i = 0; i < entrants.length; i++) {
       entrants[i].pair = 0;
     }
     updatelist({info: entrants});
-    $("#controls").children().remove();
-    
-    
-    insidepairs = [];
-    for (let i = 2; i < numbells; i++) {
-      insidepairs.push(-1);
+    $(".controls").remove();
+    if (captain) {
+      assignCaptain();
     }
+    console.log(currentrow);
+    
+    
   }
   
   function bellnums() {
@@ -686,7 +765,7 @@ $(function() {
       rowArr[rowArr.length-1].row.push(currentrow[p]);
       rowArr[rowArr.length-1].times.push(t);
     }
-    queue.push({bell: bell.bell, stroke: stroke, time: t});
+    queue.push({bell: bell.bell, stroke: stroke, time: t, place: p, row: rownum});
     
     if (bell) {
       let pan = -p/(numbells-1) + 0.5;
@@ -696,15 +775,24 @@ $(function() {
   }
   
   let lastmoved = "c5";
+  let lastrow = 0;
   
   function movebell() {
     let bellmove = lastmoved;
     let currentTime = audioCtx.currentTime;
     let currentstroke;
+    let bellplace;
+    let bellrow = lastrow;
     
     while (queue.length && queue[0].time < currentTime) {
       bellmove = queue[0].bell;
       currentstroke = queue[0].stroke;
+      bellplace = queue[0].place;
+      bellrow = queue[0].row;
+      if (robotpairs.includes(bellplace)) {
+        //console.log("emitting robot ring "+queue[0].place);
+        socket.emit("robotring", {bell: bellmove, place: bellplace, row: bellrow});
+      }
       queue.splice(0, 1);
     }
     
@@ -712,11 +800,12 @@ $(function() {
       $("#"+bellmove).css("top", 150 - currentstroke*25 + "px");
       lastmoved = bellmove;
       //also animate the pn instructions
-      let next = mypair > 0 ? place === mypair : place === numbells-1;
-      if (instruct && next && rownum >= 0) {
+      let next = mypair > 0 ? bellplace === mypair : bellplace === numbells-1;
+      if (instruct && next && rownum >= 1 && bellrow > lastrow) {
         top -= 31;
         if (top <= 100 - method.pn.length*31) top = 100;
         $("#pn").css("top", top+"px");
+        lastrow = bellrow;
       }
     }
     
@@ -765,38 +854,49 @@ $(function() {
     return sampleSource;
   }
   
-  
-  //this is the "old" function for playing media elements
-  async function ring(sound) {
-    
-    console.log("ringing");
-    sound.currentTime = 0;
-    //console.log(sound.currentTime);
-    try {
-      await sound.play();
-    } catch (err) {
-      console.log("error");
-      console.log(err.message);
-    }
-    
+  function addName(name, n) {
+    let left = 100 * (trebleloc === "right" ? numbells-1-n : n-1) + 48;
+    let div = `<div class="ringer" style="left:${left}px;">${name}</div>`;
+    $("div#controls").append(div);
   }
   
-  function addControls(id, n) {
-    $("div#controls").children().remove();
+  
+  function addControls(id, n, keys) {
+    
     let left = 100 * (trebleloc === "right" ? numbells-1-n : n-1) + 48;
     let div = `
         <div class="controls" id="${id}" style="left:${left}px;">
           `;
-    let arr = ["cross", "stretch", "places"];
+    let arr = ["cross", "stretch"];
     if (n != 1 && n != numbells-1) {
+      if (keyboardplaces && !captain) {
+        $("#keyboard ul").append(keyboardplaces);
+        keyboardplaces = null;
+      }
+      $('label[for="stretchRkey"]').text((n+1)+"ths:");
+      $('label[for="stretchLkey"]').text(n+id.slice(-2)+"s:");
       arr.push(n+id.slice(-2)+"s", (n+1)+"ths");
+    } else {
+      if (!keyboardplaces && !captain) {
+        keyboardplaces = $("#keyboard li:nth-child(n+3)").detach();
+      }
     }
+    arr.push("places");
     for (let i = 0; i < arr.length; i++) {
-      div += `<button class="${i === 3 || (i=== 1 && n===1) ? "stretchL" : i === 4 || (i=== 1 && n===numbells-1) ? "stretchR" : arr[i]}" type="button">${arr[i]}</button>
+      div += `<button class="${i === 2 || (i=== 1 && n===1) ? "stretchL" : i === 3 || (i=== 1 && n===numbells-1) ? "stretchR" : arr[i]}" type="button">${arr[i]}${keys && keys[i] ? `
+      `+keys[i] : ""}</button>
           `;
     }
     div += `</div>`;
     $("div#controls").append(div);
+  }
+  
+  function assignCaptain() {
+    let keys = conductkeys.slice(-numbells/2);
+    keys[0] = keys[0].slice(0,2);
+    for (let i = 1; i < numbells; i+=2) {
+      addControls(ordinals[(i-1)/2],i,keys[(i-1)/2]);
+    }
   }
   
   
@@ -847,34 +947,69 @@ $(function() {
     $(".cover,.rect,.triangle").remove();
     instruct = false;
     switch (instructopt) {
-        case "pnnone":
-          $("#pn").text("");
-          break;
-        case "pnfixed":
-          var arr = pnCondense(method.pn);
-          var str = arr[0];
-          for (let i = 1; i < arr.length; i++) {
-            if (arr[i-1] != "x" && arr[i] != "x") {
-              str += ".";
-            }
-            str += arr[i];
+      case "pnnone":
+        $("#pn").text("");
+        break;
+      case "pnfixed":
+        var arr = pnCondense(method.pn);
+        var str = arr[0];
+        for (let i = 1; i < arr.length; i++) {
+          if (arr[i-1] != "x" && arr[i] != "x") {
+            str += ".";
           }
-          $("#pn").attr("style", "");
-          $("#pn").text(str);
-          break;
-        case "pnanim":
+          str += arr[i];
+        }
+        $("#pn").attr("style", "");
+        $("#pn").text(str);
+        break;
+      case "pnanim":
+        instruct = true;
+        arr = pnCondense(method.pn);
+        str = arr.join("<br/>");
+        let n = mypair === 0 ? numbells/2 : mypair;
+        let left = 100 * (trebleloc === "right" ? numbells-1-n : n-1) + 48;
+        $("#pn").css({left: left+"px", width: "100px"});
+        let html = `<div class="cover top" style="left:${left}px"></div><div class="cover bottom" style="left:${left}px;height:${31*method.pn.length}px;background-image:linear-gradient(0deg, white, ${31*method.pn.length-10}px, #fff0);"></div>
+        <div class="rect" style="left:${left-60}px"></div><div class="triangle" style="left:${left}px"></div>`;
+        $("#display").append(html);
+        $("#pn").html(str);
+        break;
+      case "personal":
+        if (mypair) {
           instruct = true;
-          arr = pnCondense(method.pn);
+          arr = [];
+          method.pn.forEach(a => {
+            if (a === "x") {
+              arr.push("cross");
+            } else if (a.includes(mypair) && !a.includes(mypair+1)) {
+              let w = mypair === 1 ? "stretch" : mypair === 3 ? "3rds" : mypair+"ths";
+              arr.push(w);
+            } else if (!a.includes(mypair) && a.includes(mypair+1)) {
+              let w = mypair === numbells-1 ? "stretch" : (mypair+1)+"ths";
+              arr.push(w);
+            } else if (a.includes(mypair) && a.includes(mypair+1)) {
+              arr.push("places");
+            } else {
+              let under = Math.max(...a.concat([0]).filter(n => n < mypair));
+              if (under%2 === 0) {
+                arr.push("cross");
+              } else {
+                arr.push("stretch");
+              }
+            }
+          });
+          
           str = arr.join("<br/>");
-          let n = mypair === 0 ? numbells/2 : mypair;
-          let left = 100 * (trebleloc === "right" ? numbells-1-n : n-1) + 48;
+          let left = 100 * (trebleloc === "right" ? numbells-1-mypair : mypair-1) + 48;
           $("#pn").css({left: left+"px", width: "100px"});
           let html = `<div class="cover top" style="left:${left}px"></div><div class="cover bottom" style="left:${left}px;height:${31*method.pn.length}px;background-image:linear-gradient(0deg, white, ${31*method.pn.length-10}px, #fff0);"></div>
           <div class="rect" style="left:${left-60}px"></div><div class="triangle" style="left:${left}px"></div>`;
           $("#display").append(html);
           $("#pn").html(str);
-          break;
-      }
+        }
+        
+        break;
+    }
   }
   
   

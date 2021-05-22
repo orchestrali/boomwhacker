@@ -8,13 +8,21 @@ div {
 }
 */
 
+.hidden {
+  display: none;
+}
+
 textarea {
   width: 250px;
   height: 200px;
 }
 
-#enter > label, button, input {
+#enter > label, button, #enter > input {
   display: block;
+  margin: 10px 0;
+}
+div#enter {
+  width: 275px;
   margin: 10px auto;
 }
 
@@ -55,6 +63,45 @@ div#container {
 }
 div.column {
   margin: 5px;
+}
+
+div.column:first-child {
+  max-width: 300px;
+}
+
+div.assign {
+  display: inline-block;
+  position: relative;
+  margin-left: 5px;
+  min-width: 50px;
+  color: grey;
+}
+
+div.assign.active {
+  color: black;
+}
+
+ul.dropdown {
+  display: none;
+  position: absolute;
+  background-color: aliceblue;
+  padding-left: 10px;
+  width: 100%;
+}
+
+div.assign.active:hover > ul.dropdown, ul.dropdown.block {
+  display: block;
+}
+span.summary {
+  display: inline-block;
+  width: 100%;
+  height: 21px;
+  border: 1px solid gray;
+  border-radius: 3px;
+  padding-left: 2px;
+}
+div.assign.active > span.summary {
+  border-color: black;
 }
 
 .conduct {
@@ -123,8 +170,8 @@ div.cover {
   width: 100px;
 }
 div.cover.top {
-  top: 0;
-  height: 70px;
+  top: -20px;
+  height: 90px;
   background-image: linear-gradient(0deg, #fff0, white);
 }
 div.cover.bottom {
@@ -164,9 +211,16 @@ div.bell {
   transition: left 200ms linear, top 150ms linear;
 }
 
-div.controls {
+div.ringer {
   position: absolute;
   top: 325px;
+  width: 105px;
+  text-align: center;
+}
+
+div.controls {
+  position: absolute;
+  top: 355px;
 }
 div.controls button {
   padding: 10px 20px;
