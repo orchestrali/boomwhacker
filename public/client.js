@@ -354,6 +354,10 @@ $(function() {
     currentrow = obj.status.currentrow;
     insidepairs = obj.status.insidepairs;
     delay = speed/numbells;
+    if (obj.info.find(o => o.name === name).conductor) captain = true;
+      //console.log("numbers "+speed + " "+ delay);
+    input.placeholder = "Say something, " + name;
+    entrants = obj.info;
     if (obj.playing) {
       $("#playing").show();
     }
@@ -372,8 +376,16 @@ $(function() {
       let val = 1-(numbells-10)/16;
       $("div#room").css("transform", "scale("+val+")");
     }
+    buildlist(obj);
     $("#enter").hide();
     $("#container").show();
+    if (captain) {
+      $(".controls").remove();
+      assignCaptain();
+      $("#conduct").show();
+      $(".conduct").show();
+      $("#keyboard").hide();
+    }
   });
   
   socket.on("reopen", state => {
@@ -388,21 +400,16 @@ $(function() {
   //when anyone enters the chamber
   socket.on("entrance", function(m) {
     if (!disconnected && ready) {
-      entrants = m.info;
-      if (m.info.find(o => o.name === name).conductor) captain = true;
-      //console.log("numbers "+speed + " "+ delay);
-      input.placeholder = "Say something, " + name;
-      updatelist(m);
-      
-      if (captain) {
-        $(".controls").remove();
-        assignCaptain();
-        $("#conduct").show();
-        $(".conduct").show();
-        $("#keyboard").hide();
-      }
+      entrants.push(m.info);
+      addEntrant(m.info);
     }
     
+  });
+  
+  socket.on("exit", function(m) {
+    if (ready) {
+      updateentrant(m.info, true);
+    }
   });
   
   socket.on("disconnect", (r) => {
@@ -522,7 +529,8 @@ $(function() {
   socket.on("assign", (obj) => {
     if (ready) {
       entrants = obj;
-      updatelist({info: obj});
+      $(".ringer").remove();
+      entrants.forEach(e => updateentrant(e, false));
       
       let pair = entrants.find(e => e.name === name).pair;
       if (pair) {
@@ -551,8 +559,6 @@ $(function() {
     //let m = JSON.parse(e);
       if (m.type === "chat") {
         textarea.value += m.info + "\n";
-      } else if (m.type === "entrants") {
-        updatelist(m);
       }
     }
     
@@ -611,36 +617,61 @@ $(function() {
   
   
   
-  function updatelist(m) {
+  function buildlist(m) {
     $("#entrants li").remove();
     $(".ringer").remove();
-    m.info.forEach((e) => {
-      if (e.name === name && e.conductor) {
-        captain = true;
-        $("#numbells li:hover").css("cursor", "pointer");
-      }
-      let c = e.conductor ? " (C)" : "";
-      updatePairOpts(e.pair);
-      if (e.pair) addName(e.name, e.pair);
-      let d = captain ? "" : " disabled";
-      if (e.name === "Sidra🤖") {
-        let html = '<li><span>'+e.name+ '</span><div class="assign'+ (captain ? ' active"' : '"' ) + '><span class="summary">' + e.pairs.join(",") + '</span><ul class="dropdown">';
-        for (let i = 1; i < numbells; i+=2) {
-          html += `
-          <li><input type="checkbox" id="robot${i}" value="${i}" ${e.pairs.includes(i) ? "checked" : ""}/><label for="robot${i}">${i}-${i+1}</label></li>`;
-          if (e.pairs.includes(i)) {
-            addName(e.name, i);
-          }
+    m.info.forEach(addEntrant);
+  }
+  
+  function addEntrant(e) {
+    if (e.name === name && e.conductor) {
+      captain = true;
+      $("#numbells li:hover").css("cursor", "pointer");
+    }
+    let c = e.conductor ? " (C)" : "";
+    updatePairOpts(e.pair);
+    if (e.pair) addName(e.name, e.pair);
+    let d = captain ? "" : " disabled";
+    if (e.name === "Sidra🤖") {
+      let html = '<li id="Sidra"><span>'+e.name+ '</span><div class="assign'+ (captain ? ' active"' : '"' ) + '><span class="summary">' + (e.pairs.length ? e.pairs.map(n => n+"-"+(n+1)).join(",") : " ") + '</span><ul class="dropdown">';
+      for (let i = 1; i < numbells; i+=2) {
+        html += `
+        <li><input type="checkbox" id="robot${i}" value="${i}" ${e.pairs.includes(i) ? "checked" : ""}/><label for="robot${i}">${i}-${i+1}</label></li>`;
+        if (e.pairs.includes(i)) {
+          addName(e.name, i);
         }
-        html += '</ul></div></li>';
-        $("#entrants").append(html);
-        robotpairs = e.pairs;
-        console.log(robotpairs);
-      } else {
-        $("#entrants").append('<li><span>'+e.name+ '</span>' + c+'<select class="pair"'+d+'>'+pairOpts+'</select></li>');
       }
-      
-    });
+      html += '</ul></div></li>';
+      $("#entrants").append(html);
+      robotpairs = e.pairs;
+      console.log(robotpairs);
+    } else {
+      $("#entrants").append('<li id="'+e.name.replace(/ /g, "")+'"><span>'+e.name+ '</span>' + c+'<select class="pair"'+d+'>'+pairOpts+'</select></li>');
+    }
+  }
+  
+  function updateentrant(o, exit) {
+    if (o.name === "Sidra🤖") {
+      let summary = o.pairs.length ? o.pairs.map(n => n+"-"+(n+1)).join(",") : " ";
+      $("li#Sidra span.summary").text(summary);
+      for (let i = 1; i < numbells; i+=2) {
+        $("#robot"+i).prop("checked", o.pairs.includes(i));
+        if (o.pairs.includes(i)) {
+          addName(o.name, i);
+        }
+      }
+      robotpairs = o.pairs;
+    } else {
+      let li = $("li#"+o.name.replace(/ /g, ""));
+      let j = entrants.findIndex(e => e.name === o.name);
+      if (exit) {
+        li.remove();
+        entrants.splice(j,1);
+      } else {
+        li.find('option[value="'+o.pair+'"]').prop("checked", true);
+        if (o.pair) addName(o.name, o.pair);
+      }
+    }
   }
   
   function updatePairOpts(n) {
@@ -693,8 +724,9 @@ $(function() {
     for (let i = 0; i < entrants.length; i++) {
       entrants[i].pair = 0;
     }
-    updatelist({info: entrants});
     $(".controls").remove();
+    $(".ringer").remove();
+    entrants.forEach(e => updateentrant(e, false));
     if (captain) {
       assignCaptain();
     }
@@ -800,7 +832,7 @@ $(function() {
       $("#"+bellmove).css("top", 150 - currentstroke*25 + "px");
       lastmoved = bellmove;
       //also animate the pn instructions
-      let next = mypair > 0 ? bellplace === mypair : bellplace === numbells-1;
+      let next = (mypair > 0 && bellplace === mypair) || bellplace === numbells-1;
       if (instruct && next && rownum >= 1 && bellrow > lastrow) {
         top -= 31;
         if (top <= 100 - method.pn.length*31) top = 100;
@@ -883,7 +915,7 @@ $(function() {
     }
     arr.push("places");
     for (let i = 0; i < arr.length; i++) {
-      div += `<button class="${i === 2 || (i=== 1 && n===1) ? "stretchL" : i === 3 || (i=== 1 && n===numbells-1) ? "stretchR" : arr[i]}" type="button">${arr[i]}${keys && keys[i] ? `
+      div += `<button class="${(i === 2 && arr.length > 2) || (i=== 1 && n===1) ? "stretchL" : i === 3 || (i=== 1 && n===numbells-1) ? "stretchR" : arr[i]}" type="button">${arr[i]}${keys && keys[i] ? `
       `+keys[i] : ""}</button>
           `;
     }

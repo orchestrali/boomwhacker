@@ -51,10 +51,11 @@ module.exports = function router(io) {
           socket.emit("duplicate", "");
         } else {
           //add person to list, send list, send socket the current stage
-          entrants.push({name: obj.name, id: socket.id, conductor: obj.secret === process.env.CAPTAIN});
-          socket.emit('numbells', {num: numbells, playing: playing, status: state});
+          let o = {name: obj.name, id: socket.id, conductor: obj.secret === process.env.CAPTAIN};
+          entrants.push(o);
+          socket.emit('numbells', {num: numbells, playing: playing, status: state, info: entrants});
           //
-          io.emit('entrance', {info: entrants});
+          socket.broadcast.emit('entrance', {info: o});
         }
         
 
@@ -120,8 +121,8 @@ module.exports = function router(io) {
     });
     
     socket.on('robotring', (o) => {
-      console.log(state.rownum);
-      console.log(o);
+      //console.log(state.rownum);
+      //console.log(o);
       if (entrants.length < 3 || count >= entrants.length-1) {
         if (o.row >= state.rownum && (o.place === robotplace || entrants.length < 3) && o.row < state[state.simulator].rows.length-1) {
           if (entrants.length < 3 && o.row === state.rownum+1) state.rownum++;
@@ -141,7 +142,7 @@ module.exports = function router(io) {
           
           let nrow = ringchange(change);
           if (nrow.length) {
-            console.log(nrow);
+            //console.log(nrow);
             state.currentrow = nrow;
             io.emit("nextrow", {row: nrow, insides: state.insidepairs});
           }
@@ -226,7 +227,7 @@ module.exports = function router(io) {
     function addRobot() {
       if (!entrants.find(o => o.name === "Sidra🤖")) {
         entrants.push({name: "Sidra🤖", pairs: []});
-        io.emit('entrance', {info: entrants});
+        io.emit('entrance', {info: {name: "Sidra🤖", pairs: []}});
       }
     }
     
@@ -235,7 +236,7 @@ module.exports = function router(io) {
       let i = entrants.findIndex(e => e.id === id);
       if (i > -1) {
         console.log(entrants[i].name);
-        io.emit('entrance', {info: entrants});
+        io.emit('exit', {info: entrants[i]});
         entrants.splice(i, 1);
         
       } 
