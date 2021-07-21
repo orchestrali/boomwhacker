@@ -164,6 +164,9 @@ div#pn {
   overflow: hidden;
   transition: top 400ms ease-in-out;
 }
+div#pn p {
+  margin: 0;
+}
 
 div.cover {
   position: absolute;
