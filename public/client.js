@@ -542,6 +542,7 @@ $(function() {
       } else if (!captain) {
         $(".controls").remove();
       }
+      instructions();
     }
     
   });
@@ -670,6 +671,7 @@ $(function() {
       } else {
         li.find('option[value="'+o.pair+'"]').prop("checked", true);
         if (o.pair) addName(o.name, o.pair);
+        
       }
     }
   }
@@ -997,7 +999,7 @@ $(function() {
       case "pnanim":
         instruct = true;
         arr = pnCondense(method.pn);
-        str = arr.join("<br/>");
+        str = "<p>"+arr.join("</p><p>")+"</p>";
         let n = mypair === 0 ? numbells/2 : mypair;
         let left = 100 * (trebleloc === "right" ? numbells-1-n : n-1) + 48;
         $("#pn").css({left: left+"px", width: "100px"});
@@ -1031,7 +1033,7 @@ $(function() {
             }
           });
           
-          str = arr.join("<br/>");
+          str = "<p>"+arr.join("</p><p>")+"</p>";
           let left = 100 * (trebleloc === "right" ? numbells-1-mypair : mypair-1) + 48;
           $("#pn").css({left: left+"px", width: "100px"});
           let html = `<div class="cover top" style="left:${left}px"></div><div class="cover bottom" style="left:${left}px;height:${31*method.pn.length}px;background-image:linear-gradient(0deg, white, ${31*method.pn.length-10}px, #fff0);"></div>
