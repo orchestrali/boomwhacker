@@ -55,6 +55,10 @@ $(function() {
   var rowArr = [];
   var timeout;
   
+  let cross = [47, 46, 44, 109, 118, 99, 120, 122].slice(-numbells/2); // "/.,m vcxz"
+  let stretch = [59, 108, 107, 106, 102, 100, 115, 97].slice(-numbells/2); // ";lkj fdsa"
+  let stretch1 = [111, 119, 105, 101, 117, 114, 121, 116, 104, 103, 110, 98].slice(4-numbells); // "ow ie ur yt hg nb"
+  
   //console.log("numbers "+speed + " "+ delay);
   
   $(window).focus(() => {
@@ -182,9 +186,21 @@ $(function() {
       addBell(bells[i], i);
     }
     bellnums();
+    cross.reverse();
+    stretch.reverse();
+    stretch1.reverse();
     if (mypair > 0 && !captain) {
       $(".controls").remove();
       addControls(ordinals[(mypair-1)/2],mypair);
+      instructions();
+    } else if (captain) {
+      for (let i = 1; i <= numbells/2; i++) {
+        let child = trebleloc === "right" ? "nth-child("+(i+1)+")" : "nth-last-child("+i+")";
+        $(".controls:"+child).attr("id", ordinals[i-1]);
+      }
+      $(".stretchL:nth-child(2)").addClass("stretchRR").removeClass("stretchL");
+      $(".stretchR:nth-child(2)").addClass("stretchL").removeClass("stretchR");
+      $(".stretchRR").addClass("stretchR").removeClass("stretchRR");
       instructions();
     }
   });
@@ -263,9 +279,7 @@ $(function() {
   
   //keyboard controls
   $("body").on("keypress", function(e) {
-    let cross = [47, 46, 44, 109, 118, 99, 120, 122].slice(-numbells/2); // "/.,m vcxz"
-    let stretch = [59, 108, 107, 106, 102, 100, 115, 97].slice(-numbells/2); // ";lkj fdsa"
-    let stretch1 = [111, 119, 105, 101, 117, 114, 121, 116, 104, 103, 110, 98].slice(4-numbells); // "ow ie ur yt hg nb"
+    
     
     if (captain) {
       let change = {};
@@ -274,8 +288,16 @@ $(function() {
         change.type = "cross";
         change.pair = cross.indexOf(e.which)*2 + 1;
       } else if (stretch.includes(e.which)) {
-        
-        change.type = stretch.indexOf(e.which) === 0 ? "stretchL" : stretch.indexOf(e.which) === stretch.length-1 ? "stretchR" : "stretch";
+        switch (stretch.indexOf(e.which)) {
+          case 0:
+            change.type = "stretchL";
+            break;
+          case stretch.length-1:
+            change.type = "stretchR";
+            break;
+          default:
+            change.type = "stretch";
+        }
         change.pair = stretch.indexOf(e.which)*2 + 1;
       } else if (stretch1.includes(e.which)) {
         let i = stretch1.indexOf(e.which);
@@ -290,7 +312,16 @@ $(function() {
         pair: mypair
       }
       if (e.which === Number($("#stretchkey").val().charCodeAt(0))) {
-        change.type = mypair === 1 ? "stretchL" : mypair === numbells-1 ? "stretchR" : "stretch";
+        switch (mypair) {
+          case 1:
+            change.type = "stretchL";
+            break;
+          case numbells-1:
+            change.type = "stretchR";
+            break;
+          default:
+            change.type = "stretch";
+        }
       } else if (e.which === Number($("#crosskey").val().charCodeAt(0))) {
         change.type = "cross"
       } else if (mypair > 1 && mypair < numbells-1) {
@@ -477,7 +508,7 @@ $(function() {
         $("#"+bell.bell).css("left", left+"px");
       } else if (obj.insides[i] != insidepairs[i]) {
         if (obj.insides[i] === 1) {
-          left += i%2 === 0 ? 50 : -50;
+          left += (i%2 === 0 && trebleloc === "right") || (i%2 === 1 && trebleloc === "left") ? 50 : -50;
         }
         $("#"+bell.bell).css("left", left+"px");
       }
@@ -831,6 +862,7 @@ $(function() {
     }
     
     if (lastmoved != bellmove) {
+      let dir = trebleloc === "right" ? 1 : -1;
       $("#"+bellmove).css("top", 150 - currentstroke*25 + "px");
       lastmoved = bellmove;
       //also animate the pn instructions
@@ -917,7 +949,19 @@ $(function() {
     }
     arr.push("places");
     for (let i = 0; i < arr.length; i++) {
-      div += `<button class="${(i === 2 && arr.length > 2) || (i=== 1 && n===1) ? "stretchL" : i === 3 || (i=== 1 && n===numbells-1) ? "stretchR" : arr[i]}" type="button">${arr[i]}${keys && keys[i] ? `
+      let cl;
+      switch (arr[i]) {
+        case "cross": case "places":
+          cl = arr[i];
+          break;
+        case "stretch":
+          cl = n === 1 ? "stretchL" : n === numbells-1 ? "stretchR" : "stretch";
+          break;
+        default:
+          cl = i === 2 ? "stretchL" : "stretchR";
+          
+      }
+      div += `<button class="${cl}" type="button">${arr[i]}${keys && keys[i] ? `
       `+keys[i] : ""}</button>
           `;
     }
