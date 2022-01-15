@@ -39,7 +39,7 @@ $(function() {
   var comp;
   var instructopt = "pnnone";
   var instruct = false;
-  let top = 131;
+  let top = 130;
   let firstcall;
   let robotpairs = [];
   
@@ -495,7 +495,7 @@ $(function() {
   socket.on('reset', () => {
     
     $("#pn").css("top","131px");
-    top = 131;
+    top = 130;
     currentrow = [];
     insidepairs = [];
     rowArr = [];
@@ -886,8 +886,8 @@ $(function() {
       //also animate the pn instructions
       let next = (mypair > 0 && bellplace === mypair) || bellplace === numbells-1;
       if (instruct && next && rownum >= 1 && bellrow > lastrow) {
-        top -= 31;
-        if (top <= 100 - method.pn.length*31) top = 100;
+        top -= 30;
+        if (top <= 100 - method.pn.length*30) top = 100;
         $("#pn").css("top", top+"px");
         lastrow = bellrow;
       }
@@ -1065,7 +1065,7 @@ $(function() {
         let n = mypair === 0 ? numbells/2 : mypair;
         let left = 100 * (trebleloc === "right" ? numbells-1-n : n-1) + 48;
         $("#pn").css({left: left+"px", width: "100px"});
-        let html = `<div class="cover top" style="left:${left}px"></div><div class="cover bottom" style="left:${left}px;height:${31*method.pn.length}px;background-image:linear-gradient(0deg, white, ${31*method.pn.length-10}px, #fff0);"></div>
+        let html = `<div class="cover top" style="left:${left}px"></div><div class="cover bottom" style="left:${left}px;height:${30*method.pn.length}px;background-image:linear-gradient(0deg, white, ${31*method.pn.length-10}px, #fff0);"></div>
         <div class="rect" style="left:${left-60}px"></div><div class="triangle" style="left:${left}px"></div>`;
         $("#display").append(html);
         $("#pn").html(str);
