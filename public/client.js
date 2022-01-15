@@ -1,7 +1,8 @@
 $("#container").hide();
 var conductkeys = [
-  ["/", ";"],[".","l","o","w"],[",","k","i","e"],["m","j","u","r"],["v","f","y","t"],["c","d","h","g"],["x","s","n","b"],["z","a"]
+  ["p",";"],["o","l","/","."],["i","k",",","m"],["u","j","n","h"],["r","f","b","g"],["e","d","c","v"],["w","s","z","x"],["q","a"]
 ];
+    //[["/", ";"],[".","l","o","w"],[",","k","i","e"],["m","j","u","r"],["v","f","y","t"],["c","d","h","g"],["x","s","n","b"],["z","a"]];
 
 $(function() {
   
@@ -54,10 +55,21 @@ $(function() {
   var rownum = 0;
   var rowArr = [];
   var timeout;
-  
-  let cross = [47, 46, 44, 109, 118, 99, 120, 122].slice(-numbells/2); // "/.,m vcxz"
+  /*
+  var keycodes = {
+    cross: [47, 46, 44, 109, 118, 99, 120, 122],
+    stretch: [59, 108, 107, 106, 102, 100, 115, 97],
+    stretch1: [111, 119, 105, 101, 117, 114, 121, 116, 104, 103, 110, 98]
+  }
+  */
+  var keycodes = {
+    cross: [112, 111, 105, 117, 114, 101, 119, 113], // "poiu rewq"
+    stretch: [59, 108, 107, 106, 102, 100, 115, 97], // ";lkj fdsa"
+    stretch1: [47, 46, 44, 109, 110, 104, 98, 103, 99, 118, 122, 120] // "/.,mnh bgcvzx"
+  };
+  let cross = keycodes.cross.slice(-numbells/2); // "/.,m vcxz"
   let stretch = [59, 108, 107, 106, 102, 100, 115, 97].slice(-numbells/2); // ";lkj fdsa"
-  let stretch1 = [111, 119, 105, 101, 117, 114, 121, 116, 104, 103, 110, 98].slice(4-numbells); // "ow ie ur yt hg nb"
+  let stretch1 = keycodes.stretch1.slice(4-numbells); // "ow ie ur yt hg nb"
   
   //console.log("numbers "+speed + " "+ delay);
   
@@ -385,6 +397,9 @@ $(function() {
     currentrow = obj.status.currentrow;
     insidepairs = obj.status.insidepairs;
     delay = speed/numbells;
+    cross = keycodes.cross.slice(-numbells/2);
+    stretch = keycodes.stretch.slice(-numbells/2);
+    stretch1 = keycodes.stretch1.slice(4-numbells);
     if (obj.info.find(o => o.name === name).conductor) captain = true;
       //console.log("numbers "+speed + " "+ delay);
     input.placeholder = "Say something, " + name;
@@ -754,6 +769,9 @@ $(function() {
     let stage = stages[(numbells-4)];
     $("li#"+stage).css({color: "white", "background-color": "black"});
     bellnums();
+    cross = keycodes.cross.slice(-numbells/2);
+    stretch = keycodes.stretch.slice(-numbells/2);
+    stretch1 = keycodes.stretch1.slice(4-numbells);
     for (let i = 0; i < entrants.length; i++) {
       entrants[i].pair = 0;
     }
