@@ -489,6 +489,7 @@ $(function() {
   socket.on("speed", (s) => {
     speed = s;
     delay = s/numbells;
+    $("#speed").val(s);
   });
   
   //reset received
