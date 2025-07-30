@@ -916,7 +916,7 @@ $(function() {
   }
   
   async function setupSample(i) {
-    let arrayBuffer = await getFile(audioCtx, bellurl + bells[i].url.slice(0,10);
+    let arrayBuffer = await getFile(audioCtx, bellurl + bells[i].url.slice(0,10));
     audioCtx.decodeAudioData(arrayBuffer, (buffer) => {
       bells[i].buffer = buffer;
       if (i < bells.length-1) {
