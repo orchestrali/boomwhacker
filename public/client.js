@@ -44,6 +44,7 @@ $(function() {
   let robotpairs = [];
   
   var bellurl = "https://sallyandbobminor.wordpress.com/wp-content/uploads/2025/07/";
+  //"https://cdn.glitch.com/3222d552-1e4d-4657-8891-89dc006ccce8%2F"
   const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
   const panner = audioCtx.createPanner();
   panner.panningModel = 'equalpower';
@@ -915,7 +916,7 @@ $(function() {
   }
   
   async function setupSample(i) {
-    let arrayBuffer = await getFile(audioCtx, bellurl + bells[i].url);
+    let arrayBuffer = await getFile(audioCtx, bellurl + bells[i].url.slice(0,10);
     audioCtx.decodeAudioData(arrayBuffer, (buffer) => {
       bells[i].buffer = buffer;
       if (i < bells.length-1) {
