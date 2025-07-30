@@ -43,7 +43,7 @@ $(function() {
   let firstcall;
   let robotpairs = [];
   
-  var bellurl = "https://cdn.glitch.com/3222d552-1e4d-4657-8891-89dc006ccce8%2F";
+  var bellurl = "https://sallyandbobminor.wordpress.com/wp-content/uploads/2025/07/";
   const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
   const panner = audioCtx.createPanner();
   panner.panningModel = 'equalpower';
