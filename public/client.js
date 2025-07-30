@@ -375,7 +375,7 @@ $(function() {
     $("#name").val("");
     $("#name").attr("placeholder", '"'+name+'" already in use; pick another name');
     $("#name,#secret").prop("disabled", false);
-    $("#waiting").addClass("hidden");
+    $("#wait").addClass("hidden");
   });
   
   //secret is wrong
@@ -383,7 +383,7 @@ $(function() {
     $("#secret").val("");
     $("#secret").attr("placeholder", "invalid secret");
     $("#name,#secret").prop("disabled", false);
-    $("#waiting").addClass("hidden");
+    $("#wait").addClass("hidden");
   });
   
   
