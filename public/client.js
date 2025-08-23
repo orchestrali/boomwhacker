@@ -924,18 +924,21 @@ $(function() {
   }
   
   async function setupSample(i) {
-    let test = "https://github.com/orchestrali/boomwhacker/raw/refs/heads/master/sounds/bell60.wav";
+    let test = "sounds/bell60.wav";
     let arrayBuffer = await getFile(audioCtx, test);
     //.slice(0,10) wordpressurl + bells[i].url
-    audioCtx.decodeAudioData(arrayBuffer, (buffer) => {
-      bells[i].buffer = buffer;
-      //if (i < bells.length-1) {
-      //  i++;
-      //  setupSample(i);
-      //} else {
-        console.log("finished setting up");
-      //}
-    }, (e) => { console.log(e) });
+    if (arrayBuffer) {
+      audioCtx.decodeAudioData(arrayBuffer, (buffer) => {
+        bells[i].buffer = buffer;
+        //if (i < bells.length-1) {
+        //  i++;
+        //  setupSample(i);
+        //} else {
+          console.log("finished setting up");
+        //}
+      }, (e) => { console.log(e) });
+    }
+    
   }
   
   function playSample(audioContext, audioBuffer, pan, t) {
