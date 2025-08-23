@@ -925,17 +925,17 @@ $(function() {
   
   async function setupSample(i) {
     let test = "sounds/bell60.wav";
-    let arrayBuffer = await getFile(audioCtx, test);
+    let arrayBuffer = await getFile(audioCtx, "sounds/"+bells[i].url.slice(0,10));
     //.slice(0,10) wordpressurl + bells[i].url
     if (arrayBuffer) {
       audioCtx.decodeAudioData(arrayBuffer, (buffer) => {
         bells[i].buffer = buffer;
-        //if (i < bells.length-1) {
-        //  i++;
-        //  setupSample(i);
-        //} else {
+        if (i < bells.length-1) {
+          i++;
+          setupSample(i);
+        } else {
           console.log("finished setting up");
-        //}
+        }
       }, (e) => { console.log(e) });
     }
     
